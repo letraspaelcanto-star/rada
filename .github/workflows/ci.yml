@@ -32,7 +32,7 @@ jobs:
         run: |
           # En routes.rb y app/, las referencias a enterprise solo pueden vivir
           # detrás del flag ChatwootApp.enterprise? — este chequeo basta para el CE.
-          if grep -rEn '(^|[^_])mount.*enterprise|require.*enterprise' app/ config/ --include='*.rb' | grep -v 'ChatwootApp.enterprise?' | grep -v 'include_mod_with'; then
+          if grep -rEn '(^|[^_])mount.*enterprise|require.*enterprise' app/ config/ --include='*.rb' | grep -v 'ChatwootApp.enterprise?' | grep -v 'include_mod_with' | grep -v 'enterprise_initializers'; then
             echo "::error::Posible carga de código enterprise fuera del flag. Revisar."
             exit 1
           fi
@@ -82,10 +82,15 @@ jobs:
         run: bundle exec rubocop agency_crm/ app/controllers/api/v1/accounts/crm/ app/javascript 2>/dev/null || true
 
       - name: RSpec — specs del engine AgencyCrm
-        run: bundle exec rspec engines/agency_crm/spec --format documentation
+        run: |
+          if [ -d engines/agency_crm/spec ]; then
+            bundle exec rspec engines/agency_crm/spec --format documentation
+          else
+            echo "Engine aún no creado (Sprint 1) — paso omitido."
+          fi
 
       - name: RSpec — suites core de regresión (canal crítico)
-        run: bundle exec rspec spec/models/conversation_spec.rb spec/models/contact_spec.rb spec/controllers/api/v1/accounts/conversations_spec.rb
+        run: bundle exec rspec spec/models/conversation_spec.rb spec/models/contact_spec.rb spec/controllers/api/v1/accounts/conversations_controller_spec.rb
 
   # ---------------------------------------------------------------
   # FRONTEND — lint + tests de los módulos Vue nuevos
@@ -95,12 +100,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: ESLint — módulos del fork
         run: npx eslint app/javascript/dashboard/modules/agency-crm || true

@@ -108,3 +108,7 @@ Procfile.worktree
 
 # Cache that `rake ruby_llm:refresh_models` writes next to the model registry
 config/llm_models.json.published.json
+
+# Override local de desarrollo (el template vive en deploy/)
+docker-compose.override.yaml
+.env
