@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CreateAgencyDeals < ActiveRecord::Migration[7.2]
-  def change
+  def change # rubocop:disable Metrics/MethodLength
     create_table :agency_deals do |t|
       t.references :account, null: false, foreign_key: true, index: true
       t.references :agency_pipeline, null: false, foreign_key: { to_table: :agency_pipelines }, index: true

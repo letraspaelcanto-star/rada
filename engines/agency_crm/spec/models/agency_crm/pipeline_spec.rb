@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require File.expand_path('../agency_crm_spec_helper', __dir__)
-require File.expand_path('../../../../spec/rails_helper', __dir__)
+require File.expand_path('../../agency_crm_spec_helper', __dir__)
+require File.expand_path('../../../../../spec/rails_helper', __dir__)
 
 RSpec.describe AgencyCrm::Pipeline do
   let(:account) { create(:account) }
