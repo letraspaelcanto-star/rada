@@ -282,4 +282,4 @@ end
 
 # Engine propio del fork: CRM de agencia (kanban de deals)
 # Ver PLAN-DE-PROYECTO.md §4 — contrato congelado v1.0
-gem "agency_crm", path: "engines/agency_crm"
+gem 'agency_crm', path: 'engines/agency_crm'
