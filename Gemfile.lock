@@ -1,3 +1,9 @@
+PATH
+  remote: engines/agency_crm
+  specs:
+    agency_crm (0.1.0)
+      rails (>= 7.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -1064,6 +1070,7 @@ DEPENDENCIES
   administrate (>= 0.20.1)
   administrate-field-active_storage (>= 1.0.3)
   administrate-field-belongs_to_search (>= 0.10.0)
+  agency_crm!
   ai-agents (~> 0.13.0)
   annotaterb
   apnotic (~> 1.8)
