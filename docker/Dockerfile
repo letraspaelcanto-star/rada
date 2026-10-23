@@ -57,6 +57,8 @@ ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
+# El engine agency_crm es un path-gem: debe existir antes del bundle install
+COPY engines/ /app/engines/
 
 # natively compile grpc and protobuf to support alpine musl (dialogflow-docker workflow)
 # https://github.com/googleapis/google-cloud-ruby/issues/13306

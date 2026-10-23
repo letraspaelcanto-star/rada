@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_23_130006) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -114,6 +114,105 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "agency_board_memberships", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agency_pipeline_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "role", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_agency_board_memberships_on_account_id"
+    t.index ["agency_pipeline_id", "user_id"], name: "idx_on_agency_pipeline_id_user_id_1d2d2270a5", unique: true
+    t.index ["agency_pipeline_id"], name: "index_agency_board_memberships_on_agency_pipeline_id"
+    t.index ["user_id"], name: "index_agency_board_memberships_on_user_id"
+  end
+
+  create_table "agency_deal_activities", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agency_deal_id", null: false
+    t.integer "actor_type", default: 0, null: false
+    t.bigint "actor_id"
+    t.integer "kind", default: 0, null: false
+    t.text "body"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_agency_deal_activities_on_account_id"
+    t.index ["agency_deal_id"], name: "index_agency_deal_activities_on_agency_deal_id"
+  end
+
+  create_table "agency_deals", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agency_pipeline_id", null: false
+    t.bigint "agency_pipeline_stage_id", null: false
+    t.string "title", null: false
+    t.bigint "value_cents", default: 0, null: false
+    t.string "currency", default: "ARS", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "conversation_id"
+    t.bigint "company_id"
+    t.bigint "assignee_id"
+    t.integer "priority", default: 0, null: false
+    t.date "expected_close_on"
+    t.date "closed_on"
+    t.integer "status", default: 0, null: false
+    t.text "lost_reason"
+    t.jsonb "custom_attributes", default: {}, null: false
+    t.datetime "discarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "agency_pipeline_stage_id"], name: "index_agency_deals_on_account_id_and_agency_pipeline_stage_id"
+    t.index ["account_id", "status"], name: "index_agency_deals_on_account_id_and_status"
+    t.index ["account_id"], name: "index_agency_deals_on_account_id"
+    t.index ["agency_pipeline_id"], name: "index_agency_deals_on_agency_pipeline_id"
+    t.index ["agency_pipeline_stage_id"], name: "index_agency_deals_on_agency_pipeline_stage_id"
+    t.index ["assignee_id"], name: "index_agency_deals_on_assignee_id"
+    t.index ["company_id"], name: "index_agency_deals_on_company_id"
+    t.index ["contact_id"], name: "index_agency_deals_on_contact_id"
+    t.index ["conversation_id"], name: "index_agency_deals_on_conversation_id"
+  end
+
+  create_table "agency_pipeline_stages", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agency_pipeline_id", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "win_probability", default: 0, null: false
+    t.boolean "is_won", default: false, null: false
+    t.boolean "is_lost", default: false, null: false
+    t.jsonb "automation_config", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_agency_pipeline_stages_on_account_id"
+    t.index ["agency_pipeline_id"], name: "index_agency_pipeline_stages_on_agency_pipeline_id"
+  end
+
+  create_table "agency_pipelines", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_agency_pipelines_on_account_id"
+  end
+
+  create_table "agency_tasks", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agency_deal_id"
+    t.bigint "conversation_id"
+    t.bigint "assignee_id", null: false
+    t.string "title", null: false
+    t.datetime "due_at"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_agency_tasks_on_account_id"
+    t.index ["agency_deal_id"], name: "index_agency_tasks_on_agency_deal_id"
+    t.index ["assignee_id"], name: "index_agency_tasks_on_assignee_id"
+    t.index ["conversation_id"], name: "index_agency_tasks_on_conversation_id"
   end
 
   create_table "agent_bot_inboxes", force: :cascade do |t|
@@ -521,8 +620,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["account_id", "assistant_id", "status", "language"], name: "idx_cap_faq_suggestions_on_account_assistant_status_language"
+    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["assistant_id"], name: "index_captain_faq_suggestions_on_assistant_id"
     t.index ["embedding"], name: "vector_idx_captain_faq_suggestions_embedding", opclass: :vector_cosine_ops, using: :ivfflat
   end
@@ -765,8 +864,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
     t.jsonb "phone_number_health", default: {}, null: false
     t.datetime "phone_number_health_checked_at"
     t.string "phone_number_health_error", limit: 500
-    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
+    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
   end
 
   create_table "companies", force: :cascade do |t|
@@ -1102,7 +1201,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
     t.index ["copilot_tool_call_id"], name: "index_copilot_runs_on_copilot_tool_call_id", unique: true
     t.index ["source_run_id"], name: "index_copilot_runs_on_source_run_id"
     t.index ["status"], name: "index_copilot_runs_awaiting_approval", where: "((status)::text = 'awaiting_approval'::text)"
-    t.index ["status"], name: "index_copilot_runs_claimable", where: "((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying])::text[]))"
+    t.index ["status"], name: "index_copilot_runs_claimable", where: "((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text]))"
     t.index ["user_id"], name: "index_copilot_runs_on_user_id"
   end
 
@@ -1291,10 +1390,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "inbox_id"
-    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "(account_id IS NOT NULL) AND (inbox_id IS NULL)"
+    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "((account_id IS NOT NULL) AND (inbox_id IS NULL))"
     t.index ["inbox_id", "name", "template_type", "locale"], name: "index_email_templates_on_inbox_scope", unique: true, where: "(inbox_id IS NOT NULL)"
     t.index ["inbox_id"], name: "index_email_templates_on_inbox_id"
-    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "(account_id IS NULL) AND (inbox_id IS NULL)"
+    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "((account_id IS NULL) AND (inbox_id IS NULL))"
   end
 
   create_table "folders", force: :cascade do |t|
@@ -1802,6 +1901,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_143116) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "agency_board_memberships", "accounts"
+  add_foreign_key "agency_board_memberships", "agency_pipelines"
+  add_foreign_key "agency_board_memberships", "users"
+  add_foreign_key "agency_deal_activities", "accounts"
+  add_foreign_key "agency_deal_activities", "agency_deals"
+  add_foreign_key "agency_deals", "accounts"
+  add_foreign_key "agency_deals", "agency_pipeline_stages"
+  add_foreign_key "agency_deals", "agency_pipelines"
+  add_foreign_key "agency_deals", "companies"
+  add_foreign_key "agency_deals", "contacts"
+  add_foreign_key "agency_deals", "conversations"
+  add_foreign_key "agency_deals", "users", column: "assignee_id"
+  add_foreign_key "agency_pipeline_stages", "accounts"
+  add_foreign_key "agency_pipeline_stages", "agency_pipelines"
+  add_foreign_key "agency_pipelines", "accounts"
+  add_foreign_key "agency_tasks", "accounts"
+  add_foreign_key "agency_tasks", "agency_deals"
+  add_foreign_key "agency_tasks", "conversations"
+  add_foreign_key "agency_tasks", "users", column: "assignee_id"
   add_foreign_key "campaign_recipients", "accounts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade
