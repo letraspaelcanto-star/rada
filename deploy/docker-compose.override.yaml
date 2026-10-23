@@ -1,0 +1,29 @@
+# Compose override — desarrollo local junto a otros contenedores
+#
+# Uso: copiar este archivo a la raíz del fork como docker-compose.override.yaml
+# No toca docker-compose.yaml (archivo upstream): los merges no generan conflicto.
+#
+# Cambia lo único que te pertenece: el nombre del proyecto.
+name: agencia-crm-dev
+
+services:
+  rails:
+    ports:
+      - "3001:3000"   # app en http://localhost:3001 (3000 queda libre para tus otras cosas)
+
+  vite:
+    ports:
+      - "3037:3036"   # dev server frontend
+
+  postgres:
+    ports:
+      - "5433:5432"   # tu Postgres de prod/dev actual sigue en 5432 tranquilo
+
+  redis:
+    ports:
+      - "6380:6379"
+
+  mailhog:
+    ports:
+      - "1026:1025"   # SMTP de prueba
+      - "8026:8025"   # bandeja web en http://localhost:8026

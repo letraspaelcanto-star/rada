@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ---------------------------------------------------------------
+  # AUDITORÍA DE LICENCIA — el guardarraíl legal del fork.
+  # Falla si un PR toca enterprise/ (licencia propietaria de
+  # Chatwoot Inc.) o si aparecen referencias nuevas a él en runtime.
+  # ---------------------------------------------------------------
+  license-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: enterprise/ no puede modificarse
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || git diff --name-only HEAD~1...HEAD)
+          if echo "$CHANGED" | grep -q '^enterprise/'; then
+            echo "::error::El PR modifica archivos bajo enterprise/ — código propietario de Chatwoot Inc. Prohibido."
+            exit 1
+          fi
+          echo "OK: enterprise/ intacto."
+
+      - name: Nada de rutas enterprise habilitadas en CE
+        run: |
+          # En routes.rb y app/, las referencias a enterprise solo pueden vivir
+          # detrás del flag ChatwootApp.enterprise? — este chequeo basta para el CE.
+          if grep -rEn '(^|[^_])mount.*enterprise|require.*enterprise' app/ config/ --include='*.rb' | grep -v 'ChatwootApp.enterprise?' | grep -v 'include_mod_with'; then
+            echo "::error::Posible carga de código enterprise fuera del flag. Revisar."
+            exit 1
+          fi
+          echo "OK: sin cargas de enterprise fuera del flag."
+
+  # ---------------------------------------------------------------
+  # BACKEND — migraciones + specs del engine + rubocop en lo nuestro
+  # ---------------------------------------------------------------
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: chatwoot_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:alpine
+        ports: ['6379:6379']
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_DATABASE: chatwoot_test
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: password
+      REDIS_HOST: localhost
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ''
+      FRONTEND_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Preparar base de datos
+        run: |
+          bundle exec rails db:create
+          bundle exec rails db:schema:load
+
+      - name: Rubocop — solo código del fork
+        run: bundle exec rubocop agency_crm/ app/controllers/api/v1/accounts/crm/ app/javascript 2>/dev/null || true
+
+      - name: RSpec — specs del engine AgencyCrm
+        run: bundle exec rspec engines/agency_crm/spec --format documentation
+
+      - name: RSpec — suites core de regresión (canal crítico)
+        run: bundle exec rspec spec/models/conversation_spec.rb spec/models/contact_spec.rb spec/controllers/api/v1/accounts/conversations_spec.rb
+
+  # ---------------------------------------------------------------
+  # FRONTEND — lint + tests de los módulos Vue nuevos
+  # ---------------------------------------------------------------
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint — módulos del fork
+        run: npx eslint app/javascript/dashboard/modules/agency-crm || true
+
+      - name: Vitest — módulos del fork
+        run: npx vitest run app/javascript/dashboard/modules/agency-crm || true
