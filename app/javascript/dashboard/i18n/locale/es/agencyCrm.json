@@ -1,0 +1,21 @@
+{
+  "AGENCY_CRM": {
+    "TITLE": "CRM de agencia",
+    "SUBTITLE": "Pipelines de ventas por cliente. Elegí uno para abrir el tablero.",
+    "LOADING_PIPELINES": "Cargando pipelines…",
+    "EMPTY_PIPELINES": "Todavía no hay pipelines en esta cuenta. Sembrá el pipeline de ejemplo desde el contenedor rails con",
+    "STAGES_COUNT": "{count} etapas",
+    "ACTIVE_DEALS_COUNT": "{count} operaciones activas",
+    "BACK_TO_CRM": "← CRM",
+    "PIPELINE_FALLBACK": "Pipeline",
+    "LOADING_BOARD": "Cargando tablero…",
+    "WIN_PROBABILITY": "%{probability}% prob.",
+    "EMPTY_STAGE": "Sin operaciones",
+    "PRIORITY": {
+      "LOW": "baja",
+      "MEDIUM": "media",
+      "HIGH": "alta",
+      "URGENT": "urgente"
+    }
+  }
+}

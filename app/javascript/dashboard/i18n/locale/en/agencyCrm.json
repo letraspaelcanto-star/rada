@@ -1,0 +1,21 @@
+{
+  "AGENCY_CRM": {
+    "TITLE": "Agency CRM",
+    "SUBTITLE": "Sales pipelines per client. Pick one to open the board.",
+    "LOADING_PIPELINES": "Loading pipelines…",
+    "EMPTY_PIPELINES": "There are no pipelines in this account yet. Seed the sample pipeline from the rails container with",
+    "STAGES_COUNT": "{count} stages",
+    "ACTIVE_DEALS_COUNT": "{count} active deals",
+    "BACK_TO_CRM": "← CRM",
+    "PIPELINE_FALLBACK": "Pipeline",
+    "LOADING_BOARD": "Loading board…",
+    "WIN_PROBABILITY": "%{probability}% prob.",
+    "EMPTY_STAGE": "No deals",
+    "PRIORITY": {
+      "LOW": "low",
+      "MEDIUM": "medium",
+      "HIGH": "high",
+      "URGENT": "urgent"
+    }
+  }
+}

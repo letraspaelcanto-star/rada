@@ -669,6 +669,13 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'CRM',
+      label: 'CRM',
+      icon: 'i-lucide-briefcase',
+      to: accountScopedRoute('crm_dashboard_index'),
+      activeOn: ['crm_dashboard_index', 'crm_kanban_board'],
+    },
+    {
       name: 'Companies',
       label: t('SIDEBAR.COMPANIES'),
       icon: 'i-lucide-building-2',
