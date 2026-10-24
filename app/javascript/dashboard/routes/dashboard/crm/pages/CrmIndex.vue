@@ -19,6 +19,8 @@ onMounted(() => {
 
 const kanbanPath = pipelineId =>
   `/app/accounts/${route.params.accountId}/crm/pipelines/${pipelineId}`;
+
+const SEED_COMMAND = 'bundle exec rake agency_crm:seed_ob_pipeline';
 </script>
 
 <template>
@@ -42,7 +44,7 @@ const kanbanPath = pipelineId =>
     >
       {{ t('AGENCY_CRM.EMPTY_PIPELINES') }}
       <code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700">
-        bundle exec rake agency_crm:seed_ob_pipeline
+        {{ SEED_COMMAND }}
       </code>
     </div>
 
