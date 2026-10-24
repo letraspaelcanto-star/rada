@@ -36,11 +36,31 @@ class AgencyCrm::Deal < ApplicationRecord
   scope :kept, -> { where(discarded_at: nil) }
   scope :discarded, -> { where.not(discarded_at: nil) }
 
+  after_create :dispatch_deal_created
+  after_update :dispatch_deal_updates
+
   def discard
     update(discarded_at: Time.current)
   end
 
   private
+
+  def dispatch_deal_created
+    dispatch_crm_event('deal_created')
+  end
+
+  def dispatch_deal_updates
+    dispatch_crm_event('deal_stage_changed', saved_changes) if saved_change_to_agency_pipeline_stage_id?
+    dispatch_crm_event('deal_won', saved_changes) if saved_change_to_status? && won?
+    dispatch_crm_event('deal_lost', saved_changes) if saved_change_to_status? && lost?
+  end
+
+  # Webhooks hacia afuera (n8n): se emite por el dispatcher existente de Chatwoot,
+  # igual que Conversation — no hay bus paralelo (PLAN-DE-PROYECTO.md §5).
+  def dispatch_crm_event(event_name, changed_attributes = nil)
+    payload = { account: account, deal: self, changed_attributes: changed_attributes, performed_by: Current.executed_by }
+    Rails.configuration.dispatcher.dispatch(event_name, Time.zone.now, **payload)
+  end
 
   def stage_matches_account
     return if stage.blank? || account.blank?
