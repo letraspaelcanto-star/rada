@@ -110,7 +110,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: ESLint — módulos del fork
-        run: npx eslint app/javascript/dashboard/modules/agency-crm || true
+        run: |
+          npx eslint \
+            app/javascript/dashboard/api/crmPipelines.js \
+            app/javascript/dashboard/api/crmDeals.js \
+            app/javascript/dashboard/stores/agencyCrm.js \
+            app/javascript/dashboard/stores/specs/agencyCrm.spec.js \
+            app/javascript/dashboard/composables/useCrmPipelineCable.js \
+            app/javascript/dashboard/routes/dashboard/crm \
+            app/javascript/dashboard/i18n/locale/en/agencyCrm.json \
+            app/javascript/dashboard/i18n/locale/es/agencyCrm.json
 
       - name: Vitest — módulos del fork
-        run: npx vitest run app/javascript/dashboard/modules/agency-crm || true
+        run: npx vitest run app/javascript/dashboard/stores/specs/agencyCrm.spec.js
