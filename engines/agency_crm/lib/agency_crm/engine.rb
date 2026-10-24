@@ -10,4 +10,10 @@ class AgencyCrm::Engine < Rails::Engine
       app.config.paths['db/migrate'] << path unless host_paths.include?(path)
     end
   end
+
+  # Las asociaciones Account↔CRM viven en el engine (AccountExtension), no en
+  # app/models/account.rb — la clase upstream roza el límite de ClassLength.
+  config.to_prepare do
+    Account.include AgencyCrm::AccountExtension
+  end
 end

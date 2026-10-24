@@ -331,6 +331,18 @@ Rails.application.routes.draw do
 
           resources :custom_attribute_definitions, only: [:index, :show, :create, :update, :destroy]
           resources :custom_filters, only: [:index, :show, :create, :update, :destroy]
+          # Módulo CRM de agencia (PLAN-DE-PROYECTO.md §5) — prefijo crm/ para ser grepeable en diffs con upstream
+          namespace :crm do
+            resources :pipelines, only: [:index, :create, :show] do
+              member do
+                patch 'stages/reorder', action: :reorder_stages
+              end
+            end
+            resources :deals, only: [:index, :create, :update] do
+              resources :activities, only: [:index, :create], controller: :deal_activities
+            end
+            resources :tasks, only: [:create, :update]
+          end
           resource :branded_email_layout, only: [:show, :update]
           resources :inboxes, only: [:index, :show, :create, :update, :destroy] do
             get :assignable_agents, on: :member
