@@ -53,6 +53,50 @@ RSpec.describe AgencyCrm::Deal do
     end
   end
 
+  describe 'webhooks deal_* por el dispatcher' do
+    let(:otra_stage) { create_agency_stage(pipeline, name: 'Cotizado') }
+
+    before { allow(Rails.configuration.dispatcher).to receive(:dispatch) }
+
+    it 'despacha deal_created al crear' do
+      deal = new_deal
+      deal.save!
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with('deal_created', kind_of(Time), account: account, deal: deal, changed_attributes: nil, performed_by: nil)
+    end
+
+    it 'despacha deal_stage_changed al cambiar de etapa' do
+      deal = new_deal
+      deal.save!
+      deal.update!(stage: otra_stage)
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+        .with('deal_stage_changed', kind_of(Time), hash_including(deal: deal))
+    end
+
+    it 'despacha deal_won y deal_lost al cambiar el status' do
+      ganado = new_deal
+      ganado.save!
+      ganado.won!
+      perdido = new_deal(title: 'Silla de ruedas')
+      perdido.save!
+      perdido.lost!
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch).with('deal_won', kind_of(Time), hash_including(deal: ganado))
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch).with('deal_lost', kind_of(Time), hash_including(deal: perdido))
+    end
+
+    it 'no despacha si la transaccion hace rollback' do
+      ActiveRecord::Base.transaction(requires_new: true) do
+        new_deal.save!
+        raise ActiveRecord::Rollback
+      end
+
+      expect(Rails.configuration.dispatcher).not_to have_received(:dispatch).with('deal_created', any_args)
+    end
+  end
+
   describe 'soft-delete' do
     it 'discard marca discarded_at y lo saca del scope kept' do
       deal = new_deal
