@@ -36,8 +36,10 @@ class AgencyCrm::Deal < ApplicationRecord
   scope :kept, -> { where(discarded_at: nil) }
   scope :discarded, -> { where.not(discarded_at: nil) }
 
-  after_create :dispatch_deal_created
-  after_update :dispatch_deal_updates
+  # Webhooks hacia afuera (AGENTS.md regla 5): SOLO tras commit. Si se despacharan
+  # antes, un rollback igual dispararia el webhook y el job podria no encontrar el deal.
+  after_create_commit :dispatch_deal_created
+  after_update_commit :dispatch_deal_updates
 
   # Tiempo real del kanban (PLAN-DE-PROYECTO.md §5): se publica SOLO tras commit,
   # en el stream pipeline:<account_id>:<pipeline_id>.
@@ -46,6 +48,24 @@ class AgencyCrm::Deal < ApplicationRecord
 
   def discard
     update(discarded_at: Time.current)
+  end
+
+  # Payload de los webhooks deal_* (PLAN-DE-PROYECTO.md §5: incluye custom_attributes
+  # y la conversacion linkeada).
+  WEBHOOK_ATTRIBUTES = %w[
+    id title status priority value_cents currency
+    expected_close_on closed_on lost_reason custom_attributes created_at updated_at
+  ].freeze
+
+  def webhook_data
+    attributes.slice(*WEBHOOK_ATTRIBUTES).symbolize_keys.merge(
+      account: account.webhook_data,
+      pipeline: pipeline.slice(:id, :name).symbolize_keys,
+      stage: stage.slice(:id, :name, :is_won, :is_lost).symbolize_keys,
+      contact: contact.webhook_data,
+      conversation: conversation&.webhook_data,
+      assignee: assignee&.webhook_data
+    )
   end
 
   private

@@ -15,5 +15,8 @@ class AgencyCrm::Engine < Rails::Engine
   # app/models/account.rb — la clase upstream roza el límite de ClassLength.
   config.to_prepare do
     Account.include AgencyCrm::AccountExtension
+    # Los eventos deal_* llegan al WebhookListener de Chatwoot; los metodos que
+    # los entregan viven en el engine para no tocar app/listeners (AGENTS.md regla 4).
+    WebhookListener.include AgencyCrm::WebhookListenerExtension
   end
 end
