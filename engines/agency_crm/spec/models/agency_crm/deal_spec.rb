@@ -96,6 +96,13 @@ RSpec.describe AgencyCrm::Deal do
       expect(deal.reload.closed_on).to eq(Date.new(2026, 10, 1))
     end
 
+    it 'crear un deal con status explicito en una etapa abierta lo respeta' do
+      deal = new_deal(status: :won)
+      deal.save!
+
+      expect(deal.reload.status).to eq('won')
+    end
+
     it 'mover entre etapas abiertas no toca el status' do
       deal = new_deal
       deal.save!

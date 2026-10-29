@@ -36,8 +36,9 @@ class AgencyCrm::Deal < ApplicationRecord
   scope :kept, -> { where(discarded_at: nil) }
   scope :discarded, -> { where.not(discarded_at: nil) }
 
-  # La etapa manda: mover a una etapa is_won/is_lost cierra el deal, y salir de ella
-  # lo reabre. Asi el kanban, los reportes y los webhooks deal_won/deal_lost coinciden.
+  # La etapa manda: mover a una etapa is_won/is_lost cierra el deal, y salir de una
+  # de ellas lo reabre. Moverse entre etapas abiertas no toca el status.
+  # Asi el kanban, los reportes y los webhooks deal_won/deal_lost coinciden.
   before_save :sync_status_with_stage, if: :will_save_change_to_agency_pipeline_stage_id?
   before_save :sync_closed_on, if: :will_save_change_to_status?
 
@@ -76,13 +77,18 @@ class AgencyCrm::Deal < ApplicationRecord
   private
 
   def sync_status_with_stage
-    self.status = if stage.is_won
-                    :won
-                  elsif stage.is_lost
-                    :lost
-                  else
-                    :open
-                  end
+    if stage.is_won
+      self.status = :won
+    elsif stage.is_lost
+      self.status = :lost
+    elsif left_terminal_stage?
+      self.status = :open
+    end
+  end
+
+  def left_terminal_stage?
+    previous_stage_id = agency_pipeline_stage_id_in_database
+    previous_stage_id.present? && AgencyCrm::PipelineStage.terminal.exists?(id: previous_stage_id)
   end
 
   def sync_closed_on
