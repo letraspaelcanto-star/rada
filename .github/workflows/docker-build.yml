@@ -42,6 +42,32 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Rada: antes de publicar, construir localmente y verificar que la imagen
+      # no lleve código enterprise de Chatwoot Inc. Si falla, no se publica nada.
+      - name: Build de verificación (sin push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          load: true
+          tags: rada:verificacion
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUNDLE_WITHOUT=development:test
+            RAILS_ENV=production
+            RAILS_SERVE_STATIC_FILES=true
+            EXECJS_RUNTIME=Node
+
+      - name: Imagen sin enterprise/
+        run: |
+          docker run --rm --entrypoint sh rada:verificacion -c 'test ! -e /app/enterprise' \
+            || { echo "::error::La imagen contiene /app/enterprise (código propietario de Chatwoot Inc.)"; exit 1; }
+          docker run --rm --entrypoint sh rada:verificacion -c 'test -n "$DISABLE_ENTERPRISE"' \
+            || { echo "::error::Falta DISABLE_ENTERPRISE en la imagen"; exit 1; }
+          echo "OK: la imagen no tiene /app/enterprise y DISABLE_ENTERPRISE está seteado."
+
       - name: Build y push
         uses: docker/build-push-action@v6
         with:

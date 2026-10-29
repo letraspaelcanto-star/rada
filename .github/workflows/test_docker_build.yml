@@ -38,6 +38,17 @@ jobs:
           file: docker/Dockerfile
           platforms: ${{ matrix.platform }}
           push: false
-          load: false
+          load: ${{ matrix.platform == 'linux/amd64' }}
+          tags: rada:pr-test
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      # Rada: la imagen no puede llevar código enterprise de Chatwoot Inc.
+      - name: Imagen sin enterprise/
+        if: matrix.platform == 'linux/amd64'
+        run: |
+          docker run --rm --entrypoint sh rada:pr-test -c 'test ! -e /app/enterprise' \
+            || { echo "::error::La imagen contiene /app/enterprise (código propietario de Chatwoot Inc.)"; exit 1; }
+          docker run --rm --entrypoint sh rada:pr-test -c 'test -n "$DISABLE_ENTERPRISE"' \
+            || { echo "::error::Falta DISABLE_ENTERPRISE en la imagen"; exit 1; }
+          echo "OK: la imagen no tiene /app/enterprise y DISABLE_ENTERPRISE está seteado."
