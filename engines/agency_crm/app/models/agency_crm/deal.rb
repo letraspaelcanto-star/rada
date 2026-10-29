@@ -36,6 +36,11 @@ class AgencyCrm::Deal < ApplicationRecord
   scope :kept, -> { where(discarded_at: nil) }
   scope :discarded, -> { where.not(discarded_at: nil) }
 
+  # La etapa manda: mover a una etapa is_won/is_lost cierra el deal, y salir de ella
+  # lo reabre. Asi el kanban, los reportes y los webhooks deal_won/deal_lost coinciden.
+  before_save :sync_status_with_stage, if: :will_save_change_to_agency_pipeline_stage_id?
+  before_save :sync_closed_on, if: :will_save_change_to_status?
+
   # Webhooks hacia afuera (AGENTS.md regla 5): SOLO tras commit. Si se despacharan
   # antes, un rollback igual dispararia el webhook y el job podria no encontrar el deal.
   after_create_commit :dispatch_deal_created
@@ -69,6 +74,20 @@ class AgencyCrm::Deal < ApplicationRecord
   end
 
   private
+
+  def sync_status_with_stage
+    self.status = if stage.is_won
+                    :won
+                  elsif stage.is_lost
+                    :lost
+                  else
+                    :open
+                  end
+  end
+
+  def sync_closed_on
+    self.closed_on = open? ? nil : (closed_on || Time.zone.today)
+  end
 
   def dispatch_deal_created
     dispatch_crm_event('deal_created')

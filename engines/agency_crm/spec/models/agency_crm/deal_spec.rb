@@ -53,6 +53,67 @@ RSpec.describe AgencyCrm::Deal do
     end
   end
 
+  describe 'ganar y perder desde la etapa' do
+    let(:ganado) { create_agency_stage(pipeline, name: 'ganado', is_won: true) }
+    let(:perdido) { create_agency_stage(pipeline, name: 'perdido', is_lost: true) }
+
+    it 'mover a la etapa ganada marca won y setea closed_on' do
+      deal = new_deal
+      deal.save!
+      deal.update!(stage: ganado)
+
+      expect(deal.reload).to have_attributes(status: 'won', closed_on: Time.zone.today)
+    end
+
+    it 'mover a la etapa perdida marca lost y setea closed_on' do
+      deal = new_deal
+      deal.save!
+      deal.update!(stage: perdido)
+
+      expect(deal.reload).to have_attributes(status: 'lost', closed_on: Time.zone.today)
+    end
+
+    it 'salir de una etapa terminal reabre el deal y limpia closed_on' do
+      deal = new_deal(stage: ganado)
+      deal.save!
+      deal.update!(stage: stage)
+
+      expect(deal.reload).to have_attributes(status: 'open', closed_on: nil)
+    end
+
+    it 'crear un deal directo en la etapa ganada lo crea won' do
+      deal = new_deal(stage: ganado)
+      deal.save!
+
+      expect(deal.reload).to have_attributes(status: 'won', closed_on: Time.zone.today)
+    end
+
+    it 'respeta un closed_on ya cargado' do
+      deal = new_deal(closed_on: Date.new(2026, 10, 1))
+      deal.save!
+      deal.update!(stage: ganado)
+
+      expect(deal.reload.closed_on).to eq(Date.new(2026, 10, 1))
+    end
+
+    it 'mover entre etapas abiertas no toca el status' do
+      deal = new_deal
+      deal.save!
+      deal.update!(stage: create_agency_stage(pipeline, name: 'cotizado'))
+
+      expect(deal.reload).to have_attributes(status: 'open', closed_on: nil)
+    end
+
+    it 'mover a la etapa ganada despacha deal_won' do
+      allow(Rails.configuration.dispatcher).to receive(:dispatch)
+      deal = new_deal
+      deal.save!
+      deal.update!(stage: ganado)
+
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch).with('deal_won', kind_of(Time), hash_including(deal: deal))
+    end
+  end
+
   describe 'webhooks deal_* por el dispatcher' do
     let(:otra_stage) { create_agency_stage(pipeline, name: 'Cotizado') }
 

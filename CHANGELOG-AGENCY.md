@@ -1,6 +1,7 @@
 # Changelog del fork (lo nuestro, no upstream)
 
 ## Sin publicar
+- fix(agency-crm): mover un deal a la etapa ganada/perdida lo cierra (`status`, `closed_on`, `deal_won`/`deal_lost`); salir de ella lo reabre.
 - fix(agency-crm): los webhooks `deal_*` llegan a n8n (listener en el engine) y se despachan solo tras commit.
 - chore(fork): harness — AGENTS.md del fork, `make fork-*`, plantilla de PR, CI que corre todos los specs del fork.
 
