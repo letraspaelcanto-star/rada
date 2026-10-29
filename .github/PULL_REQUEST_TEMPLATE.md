@@ -1,31 +1,22 @@
-# Pull Request Template
+## Ítem
+<!-- Ítem de docs/sprints/actual.md o issue que cierra. Uno solo. -->
 
-## Description
+Closes #
 
-Please include a summary of the change and issue(s) fixed. Also, mention relevant motivation, context, and any dependencies that this change requires.
-Fixes # (issue)
+## Qué cambia (para el usuario)
+<!-- 2–4 líneas en lenguaje de producto. -->
 
-## Type of change
+## Archivos de upstream tocados
+<!-- Lista exacta y por qué (AGENTS.md regla 4). "Ninguno" si aplica. -->
 
-Please delete options that are not relevant.
+## Cómo se probó
+- [ ] `make fork-ci` verde local
+- [ ] Specs nuevos para lo nuevo (modelo / request / canal / store)
+- [ ] Spec de aislamiento por cuenta (si hay modelo nuevo)
+- [ ] Línea en `CHANGELOG-AGENCY.md`
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality not to work as expected)
-- [ ] This change requires a documentation update
+## Riesgo de merge con upstream
+<!-- bajo / medio / alto, y por qué. -->
 
-## How Has This Been Tested?
-
-Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration.
-
-
-## Checklist:
-
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my code
-- [ ] I have commented on my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published in downstream modules
+## Para Lis (solo si toca docker/, deploy/ o workflows de build)
+<!-- Qué cambia en infra. -->
