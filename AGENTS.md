@@ -1,138 +1,81 @@
-# Chatwoot Development Guidelines
+# Rada — fork de Chatwoot CE en modo agencia
 
-## Build / Test / Lint
+Leé esto entero antes de tocar nada. `CLAUDE.md` es un symlink a este archivo: hay un solo juego de reglas para cualquier agente (Claude, Kimi, Codex) y para humanos.
 
-- **Setup**: `bundle install && pnpm install`
-- **Run Dev**: `pnpm dev` or `overmind start -f ./Procfile.dev`
-- **Seed Local Test Data**: `bundle exec rails db:seed` (quickly populates minimal data for standard feature verification)
-- **Seed Search Test Data**: `bundle exec rails search:setup_test_data` (bulk fixture generation for search/performance/manual load scenarios)
-- **Seed Account Sample Data (richer test data)**: `Seeders::AccountSeeder` is available as an internal utility and is exposed through Super Admin `Accounts#seed`, but can be used directly in dev workflows too:
-  - UI path: Super Admin → Accounts → Seed (enqueues `Internal::SeedAccountJob`).
-  - CLI path: `bundle exec rails runner "Internal::SeedAccountJob.perform_now(Account.find(<id>))"` (or call `Seeders::AccountSeeder.new(account: Account.find(<id>)).perform!` directly).
-- **Lint JS/Vue**: `pnpm eslint` / `pnpm eslint:fix`
-- **Lint Ruby**: `bundle exec rubocop -a`
-- **Test JS**: `pnpm test` or `pnpm test:watch`
-- **Test Ruby**: `bundle exec rspec spec/path/to/file_spec.rb`
-- **Single Test**: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
-- **Run Project**: `overmind start -f Procfile.dev`
-- **Ruby Version**: Manage Ruby via `rbenv` and install the version listed in `.ruby-version` (e.g., `rbenv install $(cat .ruby-version)`)
-- **rbenv setup**: Before running any `bundle` or `rspec` commands, init rbenv in your shell (`eval "$(rbenv init -)"`) so the correct Ruby/Bundler versions are used
-- Always prefer `bundle exec` for Ruby CLI tasks (rspec, rake, rubocop, etc.)
+## Qué es este repo
 
-## Code Style
+- Fork de [chatwoot/chatwoot](https://github.com/chatwoot/chatwoot) **Community Edition** (MIT) con un CRM de ventas (pipelines kanban, deals, actividades, tareas) para operar clientes de agencia.
+- Base upstream actual: rama `develop` @ `cf60e459` (posterior a v4.19.0). Nuestro código empieza en `28c2054a`.
+- Lo nuestro vive en el engine `engines/agency_crm/` (modelos, migraciones, specs de modelo) y en rutas con prefijo `crm/` dentro de `app/` (controladores, policies, vistas jbuilder, canal, front Vue). Todo lo propio es grepeable con `crm` o `agency_crm`.
+- Documentos que mandan, en este orden: este archivo → `PLAN-DE-PROYECTO.md` §4–5 (contratos congelados v1.0) → `AGENCY.md` (flujo de releases). Si se contradicen, gana el de más arriba y abrís un issue.
+- La estrategia de producto (ofertas, verticales, qué es Core y qué satélite) NO vive acá: está en el repo hermano `rada-producto`. No la discutas en issues de código.
 
-- **Ruby**: Follow RuboCop rules (150 character max line length)
-- **Vue/JS**: Use ESLint (Airbnb base + Vue 3 recommended)
-- **Vue Components**: Use PascalCase
-- **Events**: Use camelCase
-- **I18n**: No bare strings in templates; use i18n
-- **Error Handling**: Use custom exceptions (`lib/custom_exceptions/`)
-- **Models**: Validate presence/uniqueness, add proper indexes
-- **Type Safety**: Use PropTypes in Vue, strong params in Rails
-- **Naming**: Use clear, descriptive names with consistent casing
-- **Vue API**: Always use Composition API with `<script setup>` at the top
+## Reglas duras (no negociables)
 
-## Styling
+1. **`enterprise/` no se lee, no se copia, no se adapta, no se "toma de inspiración".** Es código propietario de Chatwoot Inc. El CI falla si un PR lo toca. Si una feature de upstream solo existe en enterprise, se diseña de cero o no se hace.
+2. **Aislamiento por cuenta.** Todo modelo nuevo lleva `account_id` NOT NULL con índice; toda query parte de `Current.account` o del scope de la cuenta. Nada se lee ni se escribe sin `account_id`. Cada modelo nuevo trae un spec que prueba que una cuenta no ve datos de otra.
+3. **Contratos congelados.** El modelo de datos y la API REST de `PLAN-DE-PROYECTO.md` §4–5 son v1.0. Cambiar un nombre de columna, un enum o una ruta requiere un ADR en `docs/adr/` aprobado por Pablo antes del código.
+4. **Toques al core de Chatwoot: mínimos y listados.** Hoy el core tocado es: `Gemfile`, `config/routes.rb` (bloque `namespace :crm`), `db/schema.rb`, `docker/Dockerfile` (COPY engines/), `app/models/{contact,label,team,webhook}.rb` (una línea cada uno), `Sidebar.vue`, `dashboard.routes.js`, `i18n/locale/{en,es}/index.js`. Tocar cualquier otro archivo de upstream es una decisión: se justifica en el PR y se agrega a esta lista.
+5. **Eventos hacia afuera por el dispatcher de Chatwoot** (`Rails.configuration.dispatcher.dispatch`), en `after_commit`. Nunca un bus paralelo. Los webhooks nuevos (`deal_created`, `deal_stage_changed`, `deal_won`, `deal_lost`) ya están en `Webhook::SUPPORTED_EVENTS`.
+6. **WhatsApp solo por Cloud API oficial.** Nada de Evolution/Baileys/no oficiales en este repo.
+7. **Lo que NO va en este repo:** panel de agencia multi-cuenta, billing, white-label, packs por vertical, provisioning. Aunque el PLAN original los menciona (§3, §5 panel de agencia, §6 semanas 7–9), la decisión vigente es que van al kernel/portal, fuera de Chatwoot. Si te piden algo de eso acá, parás y preguntás.
+8. **Nada de código de producción se escribe sin spec.** La regla upstream "avoid writing specs unless asked" NO aplica en este fork. Modelo → spec de modelo en `engines/agency_crm/spec`. Controlador → request spec en `spec/controllers/api/v1/accounts/crm`. Canal → `spec/channels/agency_crm`. Store Vue → `spec.js` al lado.
+9. **Un ítem por sesión.** Tomás UN ítem del sprint actual (`docs/sprints/actual.md`). Si descubrís otro problema, lo anotás en `docs/sprints/backlog.md` con una línea y seguís. No lo arreglás "ya que estás".
+10. **Nadie mergea salvo Pablo.** El agente abre el PR con la plantilla y para. No aprueba, no mergea, no pushea a `develop`/`main`, no borra ramas ajenas, no toca tags.
 
-- **Tailwind Only**:  
-  - Do not write custom CSS  
-  - Do not use scoped CSS  
-  - Do not use inline styles  
-  - Always use Tailwind utility classes  
-- **Colors**: Refer to `tailwind.config.js` for color definitions
+## Comandos
 
-## General Guidelines
+Usá estos y no otros; si falta uno, agregalo al `Makefile` en el bloque `# --- Fork` y documentalo acá.
 
-- **Database foreign keys**: Prefer Rails associations and callbacks over database foreign-key constraints. Add a database foreign key only when there is a clear need and after checking deletion behavior and production migration/locking risks. Existing foreign keys alone are not a reason to add new ones.
-- **Migrations**: Create migrations with `bundle exec rails g migration <Name>` so the version is a real timestamp. Never hand-write or round the version (e.g. `20260925000000`); rounded versions collide across branches and break `db:migrate`.
-- **No custom SQL**: Write queries and data migrations in Ruby with ActiveRecord (`where`, `find_each`, `update!`). Do not use `execute`, SQL heredocs or raw SQL strings.
-- Prefer the smallest production-ready change that solves the current problem.
-- Build for the expected production path first. Do not add speculative guards, fallbacks, retries, or edge-case handling unless the caller can actually hit that case or production has proven it necessary.
-- Enforce eligibility and exclusivity rules at the earliest shared entry point. Do not repeat backup guards across downstream jobs, callbacks, services, or writes unless a proven independent path bypasses that point.
-- Validate request parameters at the controller or request boundary, reusing existing errors so invalid input returns `422 Unprocessable Entity` instead of reaching models or Sentry.
-- Accept only the documented type, shape, and value. Do not add compatibility coercions for malformed client values; fix official clients instead.
-- When an impossible or misconfigured state would indicate a setup/deployment bug, let it fail loudly instead of silently skipping behavior.
-- For locked/internal configs that must exist in production, prefer direct reads (`find`, `find_by!`, required hash keys) over silent fallbacks.
-- Do not add validation or response checks unless the code uses the result or the check changes behavior meaningfully.
-- Prefer existing repo dependencies/client libraries over hand-rolled protocol code for auth, signing, parsing, or API plumbing.
-- Avoid one-use private helpers unless they hide real complexity or make the main flow meaningfully easier to read.
-- Prefer minimal, readable code over elaborate abstractions; clarity beats cleverness
-- Optimize for human-readable, idiomatic Rails code. Prefer clear model methods, associations, scopes, and named route helpers over dense controller chains or manually assembled paths.
-- Keep record relationships, association traversal, and reusable database queries in models or model scopes. Return an ActiveRecord relation when callers need to filter or order the result.
-- Controllers should coordinate requests and prepare responses. Keep request-specific URL generation and presentation logic in controllers or view helpers. Before finalizing controller changes, check that relationship and traversal logic lives in the model layer.
-- Break down complex tasks into small, testable units
-- Iterate after confirmation
-- Avoid writing specs unless explicitly asked
-- In specs, avoid custom helper methods for setup/data. Prefer `let` values and direct per-example setup; only add a helper when it removes meaningful repeated complexity.
-- Remove dead/unreachable/unused code
-- Don’t write multiple versions or backups for the same logic — pick the best approach and implement it
-- Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
-- Specs in parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting raised errors
+```bash
+make fork-test     # specs del fork: engine + controladores crm + canal + vitest del store
+make fork-lint     # rubocop sobre lo nuestro + eslint de los módulos crm
+make fork-ci       # lo mismo que corre GitHub Actions (lint + specs + regresión core)
+make run           # overmind con Procfile.dev (upstream)
+bundle exec rails agency_crm:seed_ob_pipeline ACCOUNT_ID=<id>   # pipeline OB, idempotente
+```
 
-## Codex Worktree Workflow
+Entorno: Ruby `.ruby-version` (3.4.4) vía rbenv, `pnpm`, Postgres con pgvector, Redis. Dev con Docker: copiá `deploy/docker-compose.override.yaml` a la raíz (app en :3001).
 
-- Use a separate git worktree + branch per task to keep changes isolated.
-- Keep Codex-specific local setup under `.codex/` and use `Procfile.worktree` for worktree process orchestration.
-- The setup workflow in `.codex/environments/environment.toml` should dynamically generate per-worktree DB/port values (Rails, Vite, Redis DB index) to avoid collisions.
-- Start each worktree with its own Overmind socket/title so multiple instances can run at the same time.
+## Terminado significa
 
-## Commit Messages
+- Rama `feat/<slug>` o `fix/<slug>` desde `develop`, PR contra `develop` con la plantilla completa.
+- `make fork-ci` verde local y en GitHub. Un spec que se omite con `|| true`, `skip` o `xit` no cuenta como verde.
+- Specs nuevos para todo lo nuevo; el spec de aislamiento por cuenta si hay modelo nuevo.
+- Strings de UI en `i18n/locale/en/agencyCrm.json` y `es/agencyCrm.json`, nunca hardcodeadas.
+- Línea en `CHANGELOG-AGENCY.md` bajo "Sin publicar".
+- Sin `TODO`, `binding.pry`, `console.log` ni código muerto en el diff.
+- El PR dice qué archivos de upstream tocó (regla 4) y por qué.
 
-- Prefer Conventional Commits: `type(scope): subject` (scope optional)
-- Example: `feat(auth): add user authentication`
-- Don't reference Claude in commit messages
+## Cómo está armado el CRM (para orientarte rápido)
 
-## PR Description Format
+| Capa | Dónde | Notas |
+|---|---|---|
+| Modelos | `engines/agency_crm/app/models/agency_crm/` | `Pipeline`, `PipelineStage`, `Deal`, `DealActivity`, `Task`, `BoardMembership`; `AccountExtension` cuelga `has_many` en `Account` |
+| Migraciones | `engines/agency_crm/db/migrate/` | Tablas `agency_*`. Generar con `rails g migration` dentro del engine; nunca versión inventada |
+| API REST | `app/controllers/api/v1/accounts/crm/` | `pipelines`, `deals`, `deal_activities`, `tasks`. Autorizar con policy → servicio/modelo → jbuilder. Sin lógica en el controlador |
+| Policies | `app/policies/agency_crm/` | Pundit, una por recurso; `BoardMembership` decide viewer/editor |
+| Vistas JSON | `app/views/api/v1/accounts/crm/` + `app/views/api/v1/models/_crm_*.json.jbuilder` | Un partial por modelo |
+| Realtime | `app/channels/agency_crm/pipeline_channel.rb` | Stream `pipeline:<account_id>:<pipeline_id>`; eventos `deal.created/moved/updated` |
+| Front | `app/javascript/dashboard/routes/dashboard/crm/`, `stores/agencyCrm.js`, `api/crm*.js`, `composables/useCrmPipelineCable.js` | Vue 3 `<script setup>`, Pinia-style store, Tailwind, `components-next` |
+| Seed | `lib/tasks/agency_crm.rake` | Pipeline OB: nuevo → contactado → cotizado → pensando / visito_local → ganado / perdido |
 
-- Start with a short, user-facing paragraph describing the product change.
-- Add a `Closes` section with relevant issue links (GitHub, Linear, etc.).
-- For feature PRs, add `How to test` from a product/UX standpoint.
-- For bugfix PRs, use `How to reproduce` when helpful.
-- Optionally add a `What changed` section for implementation highlights.
-- Do not add a `How this was tested` section listing specs/commands.
+Decisiones ya tomadas que no se rediscuten en un PR: `assignee_id` (no `owner_id`); `priority` con el mismo enum que `Conversation`; `company_id` apunta a `companies` de CE; un deal abierto por pipeline por conversación; deals con soft-delete (`discarded_at`), pipelines/stages hard con restricción.
 
-## Project-Specific
+## Convenciones heredadas de Chatwoot (siguen valiendo)
 
-- **Translations**:
-  - For product and source-string changes, only update `en.yml` and `en.json`; other languages are handled through Crowdin and the community
-  - Crowdin-generated translation sync PRs may update non-English locale files; do not flag those changes solely for modifying translated locale files
-  - Preserve product and brand names, OAuth scopes, API values, and other machine-readable identifiers unless an official localized form exists
-  - When reviewing Crowdin syncs, verify protected terms remain unchanged. Add newly introduced product names, brand names, and machine-readable identifiers to the Crowdin glossary as non-translatable, and keep the glossary current
-  - Backend i18n → `en.yml`, Frontend i18n → `en.json`
-- **Frontend**:
-  - Use `components-next/` for message bubbles (the rest is being deprecated)
+- Ruby: RuboCop (150 cols), `bundle exec` siempre, `module/class` compactos, excepciones en `lib/custom_exceptions/`.
+- Rails: validar presencia/unicidad e indexar; sin SQL crudo (`execute`, heredocs): todo con ActiveRecord; relaciones y scopes en el modelo, el controlador coordina; parámetros validados en el borde con `422`; fallar fuerte ante estado imposible, sin fallbacks especulativos.
+- Migraciones: `bundle exec rails g migration <Name>`; nunca versión redondeada a mano.
+- Vue/JS: ESLint (Airbnb + Vue 3), Composition API con `<script setup>`, PascalCase para componentes, camelCase para eventos, sin strings sueltos (i18n), `components-next/` para lo nuevo.
+- Estilos: solo Tailwind; sin CSS custom, scoped ni inline; colores de `tailwind.config.js`; utilidades lógicas (`ms`, `me`, `start`, `end`).
+- i18n: backend en `en.yml`, frontend en `en.json` (y nuestro `es/agencyCrm.json`); nunca editar otros idiomas a mano.
+- Specs: `let` y setup por ejemplo, sin helpers custom; `with_modified_env` en vez de stubear `ENV`.
+- Commits: Conventional Commits `type(scope): subject`, scope `agency-crm`, `ci`, `fork`, `docs`. Ejemplo: `feat(agency-crm): panel del deal en la conversación`. No se menciona al agente en el commit.
+- Sync con upstream: ver `AGENCY.md`. Nunca mergear `upstream/develop` a ciegas: solo tags de release, cada 2 semanas, en PR propio, con `make fork-ci` verde.
 
-## Ruby Best Practices
+## Gente
 
-- Use compact `module/class` definitions; avoid nested styles
-
-## Frontend Conventions
-
-- Prefer existing design-system utilities and shared composables.
-- Use typography utilities instead of manually recreating font styles.
-- Use logical Tailwind utilities (`ms`, `me`, `start`, `end`) for direction-aware layouts.
-- Use `rem` for arbitrary CSS dimensions; preserve native numeric values required by chart/SVG APIs.
-- Extract repeated or domain-specific strings, thresholds, colors, and durations into named constants.
-- Use shared request-cancellation utilities instead of local `AbortController` logic.
-
-## Enterprise Edition Notes
-
-- Chatwoot has an Enterprise overlay under `enterprise/` that extends/overrides OSS code.
-- When you add or modify core functionality, always check for corresponding files in `enterprise/` and keep behavior compatible.
-- Follow the Enterprise development practices documented here:
-  - https://chatwoot.help/hc/handbook/articles/developing-enterprise-edition-features-38
-
-Practical checklist for any change impacting core logic or public APIs
-- Search for related files in both trees before editing (e.g., `rg -n "FooService|ControllerName|ModelName" app enterprise`).
-- If adding new endpoints, services, or models, consider whether Enterprise needs:
-  - An override (e.g., `enterprise/app/...`), or
-  - An extension point (e.g., `prepend_mod_with`, hooks, configuration) to avoid hard forks.
-- Avoid hardcoding instance- or plan-specific behavior in OSS; prefer configuration, feature flags, or extension points consumed by Enterprise.
-- Keep request/response contracts stable across OSS and Enterprise; update both sets of routes/controllers when introducing new APIs.
-- When renaming/moving shared code, mirror the change in `enterprise/` to prevent drift.
-- Tests: Add Enterprise-specific specs under `spec/enterprise`, mirroring OSS spec layout where applicable.
-- When modifying existing OSS features for Enterprise-only behavior, add an Enterprise module (via `prepend_mod_with`/`include_mod_with`) instead of editing OSS files directly—especially for policies, controllers, and services. For Enterprise-exclusive features, place code directly under `enterprise/`.
-
-## Branding / White-labeling note
-
-- For user-facing strings that currently contain "Chatwoot" but should adapt to branded/self-hosted installs, prefer applying `replaceInstallationName` from `shared/composables/useBranding` in the UI layer (for example tooltip and suggestion labels) instead of adding hardcoded brand-specific copy.
+- **Pablo** — dueño del producto, decide y mergea.
+- **Lisandro (Lis)** — infra/DevOps: VM, Caddy, Docker, backups. Cualquier cambio en `docker/`, `deploy/` o workflows de build se le pide revisión.
+- **Agentes (Claude, Kimi, Codex)** — construyen un ítem por sesión y revisan PRs. No mergean.
