@@ -10,7 +10,7 @@ Fork con fines comerciales de la agencia. Ver `PLAN-DE-PROYECTO.md` para el plan
 | Base inicial | v4.x (completar al crear el fork) |
 | Versionado | `v<upstream>-agency.<n>` — ej. `v4.18.0-agency.1` |
 | Licencia | MIT (core Chatwoot) + licencia propia para código en `fazer_ai/`-equivalente |
-| **Regla inviolable** | El directorio `enterprise/` se preserva intacto y NUNCA se carga en el CE. El CI lo verifica. |
+| **Regla inviolable** | El directorio `enterprise/` se preserva intacto en el repo (para no romper los sync con upstream) y NUNCA entra a la imagen: `.dockerignore` lo excluye, la imagen setea `DISABLE_ENTERPRISE=true`, y `test_docker_build.yml` (cada PR) y `docker-build.yml` (cada tag, antes del push) fallan si la imagen tiene `/app/enterprise`. `ci.yml` además falla si un PR modifica `enterprise/`. |
 
 ## Qué se agrega sobre el CE (ver contratos congelados v1.0 en PLAN-DE-PROYECTO.md)
 

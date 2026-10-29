@@ -135,6 +135,10 @@ RUN apk update && apk add --no-cache \
 # Restrict libvips to its trusted image loaders when generating variants
 ENV VIPS_BLOCK_UNTRUSTED=1
 
+# Rada: segunda defensa. enterprise/ ya no entra por .dockerignore; si alguien
+# lo vuelve a incluir, ChatwootApp.enterprise? igual devuelve falso.
+ENV DISABLE_ENTERPRISE=true
+
 COPY --from=node /usr/local/bin/node /usr/local/bin/
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 

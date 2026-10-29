@@ -15,3 +15,8 @@ vendor/bundle
 .DS_Store
 *.swp
 *~
+
+# Rada: código propietario de Chatwoot Inc. (enterprise/LICENSE).
+# Queda en el repo para no romper los sync con upstream, pero NUNCA entra a la imagen.
+enterprise
+spec/enterprise
