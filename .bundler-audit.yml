@@ -35,3 +35,8 @@ ignore:
   # reassess if the supported Ruby runtime changes.
   - CVE-2026-67987
   - CVE-2026-67989
+  # Rada: ReDoS en la ofuscación de query strings del tracer de datadog (< 2.45.0).
+  # Datadog solo se configura si DD_TRACE_AGENT_URL está seteado
+  # (config/initializers/datadog.rb) y Rada no lo usa en ninguna instalación.
+  # Quitar en el próximo sync con upstream que suba datadog a >= 2.45.0.
+  - GHSA-p7cx-x3jr-jj6w
