@@ -107,4 +107,22 @@ RSpec.describe 'CRM Pipelines API', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  describe 'account isolation' do
+    let(:other_account) { create(:account) }
+    let!(:other_pipeline) { AgencyCrm::Pipeline.create!(account: other_account, name: 'Foreign board') }
+
+    it 'returns 404 for show with a pipeline from another account' do
+      get "/api/v1/accounts/#{account.id}/crm/pipelines/#{other_pipeline.id}", headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'returns 404 for stages/reorder with a pipeline from another account' do
+      patch "/api/v1/accounts/#{account.id}/crm/pipelines/#{other_pipeline.id}/stages/reorder",
+            params: { stage_ids: [1, 2] }, headers: admin.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

@@ -152,6 +152,50 @@ RSpec.describe 'CRM Deals API', type: :request do
     end
   end
 
+  describe 'account isolation' do
+    let(:other_account) { create(:account) }
+    let(:other_contact) { create(:contact, account: other_account) }
+    let!(:other_pipeline) do
+      AgencyCrm::Pipeline.create!(account: other_account, name: 'Foreign pipeline').tap do |p|
+        p.stages.create!(account: other_account, name: 'nuevo', position: 0, win_probability: 10)
+      end
+    end
+    let(:other_stage) { other_pipeline.stages.first }
+    let!(:other_deal) do
+      AgencyCrm::Deal.create!(account: other_account, pipeline: other_pipeline, stage: other_stage,
+                              contact: other_contact, title: 'Foreign wheelchair deal')
+    end
+    let!(:own_deal) { create_deal(title: 'Own deal', stage: first_stage) }
+
+    it 'does not list deals from other accounts' do
+      get "/api/v1/accounts/#{account.id}/crm/deals", headers: agent.create_new_auth_token
+
+      ids = response.parsed_body['payload'].map { |d| d['id'] }
+      expect(ids).to include(own_deal.id)
+      expect(ids).not_to include(other_deal.id)
+    end
+
+    it 'returns nothing when filtering by a stage from another account' do
+      get "/api/v1/accounts/#{account.id}/crm/deals?stage_id=#{other_stage.id}", headers: agent.create_new_auth_token
+
+      expect(response.parsed_body['payload'].map { |d| d['id'] }).not_to include(other_deal.id)
+    end
+
+    it 'does not find deals from other accounts when searching' do
+      get "/api/v1/accounts/#{account.id}/crm/deals?q=wheelchair", headers: agent.create_new_auth_token
+
+      expect(response.parsed_body['payload'].map { |d| d['id'] }).not_to include(other_deal.id)
+    end
+
+    it 'returns 404 for update with a deal from another account' do
+      patch "/api/v1/accounts/#{account.id}/crm/deals/#{other_deal.id}",
+            params: { deal: { title: 'Hijacked' } }, headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_deal.reload.title).to eq('Foreign wheelchair deal')
+    end
+  end
+
   def create_deal(title:, stage:, status: :open)
     AgencyCrm::Deal.create!(account: account, pipeline: pipeline, stage: stage, contact: contact,
                             title: title, status: status)

@@ -46,4 +46,21 @@ RSpec.describe AgencyCrm::PipelineStage do
       expect(described_class.new(account: account, pipeline: otro, name: 'Ganado', is_won: true)).to be_valid
     end
   end
+
+  describe 'aislamiento entre cuentas' do
+    let(:other_account) { create(:account) }
+    let!(:own_stage) { create_agency_stage(pipeline, name: 'Contactado') }
+    let!(:foreign_stage) { create_agency_stage(create_agency_pipeline(other_account), name: 'Nuevo (ajeno)') }
+
+    it 'where(account:) no devuelve etapas de otra cuenta' do
+      scoped = described_class.where(account: account)
+      expect(scoped).to include(own_stage)
+      expect(scoped).not_to include(foreign_stage)
+    end
+
+    it 'pipeline.stages no expone etapas de un pipeline de otra cuenta' do
+      expect(pipeline.stages).to include(own_stage)
+      expect(pipeline.stages).not_to include(foreign_stage)
+    end
+  end
 end
