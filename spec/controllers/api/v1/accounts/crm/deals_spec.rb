@@ -120,6 +120,17 @@ RSpec.describe 'CRM Deals API', type: :request do
       expect(deal.reload.agency_pipeline_stage_id).to eq(won_stage.id)
     end
 
+    it 'closes the deal as won when moved to the won stage from the kanban' do
+      allow(Rails.configuration.dispatcher).to receive(:dispatch)
+
+      patch "/api/v1/accounts/#{account.id}/crm/deals/#{deal.id}",
+            params: { deal: { agency_pipeline_stage_id: won_stage.id } },
+            headers: agent.create_new_auth_token
+
+      expect(deal.reload).to have_attributes(status: 'won', closed_on: Time.zone.today)
+      expect(Rails.configuration.dispatcher).to have_received(:dispatch).with('deal_won', kind_of(Time), anything)
+    end
+
     it 'marks the deal as won and dispatches deal_won' do
       allow(Rails.configuration.dispatcher).to receive(:dispatch)
       expect(Rails.configuration.dispatcher).to receive(:dispatch)
