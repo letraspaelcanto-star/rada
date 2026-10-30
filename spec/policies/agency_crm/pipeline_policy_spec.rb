@@ -57,7 +57,8 @@ RSpec.describe AgencyCrm::PipelinePolicy, type: :policy do
 
       resolved = described_class::Scope.new(agent_context, AgencyCrm::Pipeline.where(account: account)).resolve
 
-      expect(resolved).to include(pipeline).and exclude(other_pipeline)
+      expect(resolved).to include(pipeline)
+      expect(resolved).not_to include(other_pipeline)
     end
   end
 end

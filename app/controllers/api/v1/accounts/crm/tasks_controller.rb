@@ -17,7 +17,12 @@ class Api::V1::Accounts::Crm::TasksController < Api::V1::Accounts::BaseControlle
     render 'api/v1/accounts/crm/tasks/show'
   end
 
+  # Igual que en deals#update: autorizar contra el deal ORIGINAL y, si el patch
+  # la relinkea a otro deal, contra el deal NUEVO — editor de los DOS boards.
   def update
+    authorize_crm(@task)
+    return if performed?
+
     @task.assign_attributes(task_params.except(:agency_deal_id, :conversation_id, :assignee_id))
     assign_linked_records
     authorize_crm(@task)

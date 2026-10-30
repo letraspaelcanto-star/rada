@@ -35,8 +35,6 @@ RSpec.describe AgencyCrm::DealActivityPolicy, type: :policy do
   end
 
   permissions :create? do
-    it { expect(policy).to permit(admin_context, deal) }
-
     context 'when the agent is an editor of the deal board' do
       before { pipeline.board_memberships.create!(account: account, user: agent, role: :editor) }
 

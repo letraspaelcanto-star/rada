@@ -22,11 +22,8 @@ RSpec.describe AgencyCrm::PipelineChannel do
     end
   end
 
-  let!(:agent_membership) do
-    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
-  end
-
   before do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
     stub_connection
   end
 

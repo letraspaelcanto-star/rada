@@ -16,7 +16,7 @@ RSpec.describe 'CRM Pipelines API', type: :request do
     end
   end
 
-  let!(:viewer_membership) do
+  before do
     AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :viewer)
   end
 

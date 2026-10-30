@@ -18,20 +18,26 @@ RSpec.describe Rake::Task do
 
     it 'creates the pipeline, its stages and editor memberships for every agent' do
       expect { task.invoke }.to change(AgencyCrm::Pipeline, :count).by(1)
-        .and change(AgencyCrm::PipelineStage, :count).by(7)
-        .and change(AgencyCrm::BoardMembership, :count).by(2)
+                                                                   .and change(AgencyCrm::PipelineStage, :count).by(7)
+                                                                                                                .and change(
+                                                                                                                  AgencyCrm::BoardMembership, :count
+                                                                                                                ).by(2)
 
       pipeline = account.agency_crm_pipelines.find_by!(name: 'Ventas OB')
-      expect(pipeline.board_memberships.editor.map(&:user_id)).to contain_exactly(agent_one.id, agent_two.id)
+      editor_ids = pipeline.board_memberships.editor.map(&:user_id)
+      expect(editor_ids).to contain_exactly(agent_one.id, agent_two.id)
+      expect(editor_ids).not_to include(admin.id)
     end
 
     it 'is idempotent: a second run duplicates nothing' do
       task.invoke
-      task.reenable
 
-      expect { task.invoke }.to change(AgencyCrm::Pipeline, :count).by(0)
-        .and change(AgencyCrm::PipelineStage, :count).by(0)
-        .and change(AgencyCrm::BoardMembership, :count).by(0)
+      task.reenable
+      expect { task.invoke }.not_to change(AgencyCrm::Pipeline, :count)
+      task.reenable
+      expect { task.invoke }.not_to change(AgencyCrm::PipelineStage, :count)
+      task.reenable
+      expect { task.invoke }.not_to change(AgencyCrm::BoardMembership, :count)
     end
 
     it 'backfills memberships on an existing pipeline (creado antes del ítem 5)' do

@@ -68,7 +68,8 @@ RSpec.describe AgencyCrm::DealPolicy, type: :policy do
 
       resolved = described_class::Scope.new(agent_context, AgencyCrm::Deal.where(account: account)).resolve
 
-      expect(resolved).to include(deal).and exclude(other_deal)
+      expect(resolved).to include(deal)
+      expect(resolved).not_to include(other_deal)
     end
   end
 end

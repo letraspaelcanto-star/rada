@@ -67,7 +67,7 @@ docker:
 
 # --- Fork (Rada / agency_crm). Ver AGENTS.md "Comandos". Lo que corre acá es lo que corre en CI.
 FORK_RUBY := engines/agency_crm app/controllers/api/v1/accounts/crm app/policies/agency_crm app/channels/agency_crm app/views/api/v1/accounts/crm lib/tasks/agency_crm.rake
-FORK_SPECS := engines/agency_crm/spec spec/controllers/api/v1/accounts/crm spec/channels/agency_crm
+FORK_SPECS := engines/agency_crm/spec spec/controllers/api/v1/accounts/crm spec/channels/agency_crm spec/policies/agency_crm spec/lib/tasks/rake
 FORK_JS := app/javascript/dashboard/api/crmPipelines.js app/javascript/dashboard/api/crmDeals.js app/javascript/dashboard/stores/agencyCrm.js app/javascript/dashboard/stores/specs/agencyCrm.spec.js app/javascript/dashboard/composables/useCrmPipelineCable.js app/javascript/dashboard/routes/dashboard/crm
 CORE_REGRESSION := spec/models/conversation_spec.rb spec/models/contact_spec.rb spec/controllers/api/v1/accounts/conversations_controller_spec.rb
 

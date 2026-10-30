@@ -30,7 +30,13 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
     render 'api/v1/accounts/crm/deals/show'
   end
 
+  # Doble autorización: primero contra el board ORIGINAL (hay que poder escribir
+  # el deal que se toca) y, tras aplicar params, contra el board NUEVO — mover un
+  # deal de A a B exige ser editor (o admin) de los DOS (review rada#14).
   def update
+    authorize_crm(@deal)
+    return if performed?
+
     @deal.assign_attributes(deal_params.except(:contact_id, :conversation_id, :company_id, :assignee_id))
     assign_linked_records
     authorize_crm(@deal)
