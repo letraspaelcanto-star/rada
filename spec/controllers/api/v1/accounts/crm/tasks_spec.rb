@@ -63,4 +63,36 @@ RSpec.describe 'CRM Tasks API', type: :request do
       expect(task.reload.assignee_id).to eq(other_agent.id)
     end
   end
+
+  describe 'account isolation' do
+    let(:other_account) { create(:account) }
+    let(:other_agent) { create(:user, account: other_account, role: :agent) }
+    let!(:other_deal) do
+      other_pipeline = AgencyCrm::Pipeline.create!(account: other_account, name: 'Foreign pipeline')
+      other_stage = other_pipeline.stages.create!(account: other_account, name: 'nuevo', position: 0, win_probability: 10)
+      AgencyCrm::Deal.create!(account: other_account, pipeline: other_pipeline, stage: other_stage,
+                              contact: create(:contact, account: other_account), title: 'Foreign deal')
+    end
+    let!(:other_task) do
+      AgencyCrm::Task.create!(account: other_account, deal: other_deal, assignee: other_agent, title: 'Foreign task')
+    end
+
+    it 'returns 404 for update with a task from another account' do
+      patch "/api/v1/accounts/#{account.id}/crm/tasks/#{other_task.id}",
+            params: { task: { title: 'Hijacked' } }, headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_task.reload.title).to eq('Foreign task')
+    end
+
+    it 'rejects a deal from another account on create',
+       pending: 'ítem 3: ids de otra cuenta deben dar 422 (hoy se descartan en silencio)' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/crm/tasks",
+             params: { task: { title: 'Follow up', agency_deal_id: other_deal.id } }, headers: agent.create_new_auth_token
+      end.not_to change(AgencyCrm::Task, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
 end

@@ -31,4 +31,25 @@ RSpec.describe AgencyCrm::BoardMembership do
     membership.editor!
     expect(membership.reload.editor?).to be true
   end
+
+  describe 'aislamiento entre cuentas' do
+    let(:other_account) { create(:account) }
+    let(:other_user) { create(:user, account: other_account) }
+    let!(:own_membership) { described_class.create!(account: account, pipeline: pipeline, user: user) }
+    let!(:foreign_membership) do
+      foreign_pipeline = create_agency_pipeline(other_account)
+      described_class.create!(account: other_account, pipeline: foreign_pipeline, user: other_user)
+    end
+
+    it 'where(account:) no devuelve membresias de otra cuenta' do
+      scoped = described_class.where(account: account)
+      expect(scoped).to include(own_membership)
+      expect(scoped).not_to include(foreign_membership)
+    end
+
+    it 'pipeline.board_memberships no expone membresias de un pipeline de otra cuenta' do
+      expect(pipeline.board_memberships).to include(own_membership)
+      expect(pipeline.board_memberships).not_to include(foreign_membership)
+    end
+  end
 end

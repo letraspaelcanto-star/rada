@@ -65,4 +65,29 @@ RSpec.describe 'CRM Deal Activities API', type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
     end
   end
+
+  describe 'account isolation' do
+    let(:other_account) { create(:account) }
+    let!(:other_deal) do
+      other_pipeline = AgencyCrm::Pipeline.create!(account: other_account, name: 'Foreign pipeline')
+      other_stage = other_pipeline.stages.create!(account: other_account, name: 'nuevo', position: 0, win_probability: 10)
+      AgencyCrm::Deal.create!(account: other_account, pipeline: other_pipeline, stage: other_stage,
+                              contact: create(:contact, account: other_account), title: 'Foreign deal')
+    end
+
+    it 'returns 404 for index with a deal from another account' do
+      get "/api/v1/accounts/#{account.id}/crm/deals/#{other_deal.id}/activities", headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'returns 404 for create with a deal from another account' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/crm/deals/#{other_deal.id}/activities",
+             params: { activity: { kind: :note, body: 'Intruding note' } }, headers: agent.create_new_auth_token
+      end.not_to change(AgencyCrm::DealActivity, :count)
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
