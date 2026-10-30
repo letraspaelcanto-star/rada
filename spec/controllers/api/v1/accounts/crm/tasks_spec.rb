@@ -13,6 +13,10 @@ RSpec.describe 'CRM Tasks API', type: :request do
     AgencyCrm::Deal.create!(account: account, pipeline: pipeline, stage: stage, contact: contact, title: 'Silla de ruedas')
   end
 
+  before do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/crm/tasks' do
     it 'creates a task assigned to the authenticated user by default' do
       expect do
@@ -61,6 +65,33 @@ RSpec.describe 'CRM Tasks API', type: :request do
             headers: agent.create_new_auth_token
 
       expect(task.reload.assignee_id).to eq(other_agent.id)
+    end
+  end
+
+  describe 'relinking a task to a deal of another board' do
+    let!(:board_b) do
+      AgencyCrm::Pipeline.create!(account: account, name: 'Soporte post-venta').tap do |p|
+        p.stages.create!(account: account, name: 'nuevo', position: 0, win_probability: 10)
+      end
+    end
+    let(:mover) { create(:user, account: account, role: :agent) }
+
+    before do
+      AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: mover, role: :viewer)
+      AgencyCrm::BoardMembership.create!(account: account, pipeline: board_b, user: mover, role: :editor)
+    end
+
+    it 'forbids relinking a task whose board the agent only views, even being editor of the target' do
+      deal_on_b = AgencyCrm::Deal.create!(account: account, pipeline: board_b, stage: board_b.stages.first,
+                                          contact: contact, title: 'Deal en board B')
+      task_on_a = AgencyCrm::Task.create!(account: account, deal: deal, assignee: agent, title: 'Llamar')
+
+      patch "/api/v1/accounts/#{account.id}/crm/tasks/#{task_on_a.id}",
+            params: { task: { agency_deal_id: deal_on_b.id } },
+            headers: mover.create_new_auth_token
+
+      expect(response).to have_http_status(:forbidden)
+      expect(task_on_a.reload.agency_deal_id).to eq(deal.id)
     end
   end
 

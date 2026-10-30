@@ -2,11 +2,14 @@
 
 # Pipelines (boards) del CRM de agencia — contrato PLAN-DE-PROYECTO.md §5.
 class Api::V1::Accounts::Crm::PipelinesController < Api::V1::Accounts::BaseController
-  before_action -> { check_authorization(AgencyCrm::Pipeline) }
+  include Api::V1::Accounts::Crm::Authorizable
+
+  before_action -> { check_authorization(AgencyCrm::Pipeline) }, only: [:index, :create]
   before_action :fetch_pipeline, only: [:show, :reorder_stages]
+  before_action -> { authorize_crm(@pipeline) }, only: [:show, :reorder_stages]
 
   def index
-    @pipelines = Current.account.agency_crm_pipelines.includes(:stages)
+    @pipelines = policy_scope(Current.account.agency_crm_pipelines).includes(:stages)
   end
 
   def show; end

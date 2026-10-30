@@ -11,11 +11,20 @@
 class AgencyCrm::PipelineChannel < ApplicationCable::Channel
   def subscribed
     return reject if current_user.blank? || current_account.blank? || current_pipeline.blank?
+    return reject unless board_access?
 
     stream_from stream_name
   end
 
   private
+
+  # Brief Sprint 3.5 ítem 5: admin de la cuenta o miembro del board (viewer/editor).
+  def board_access?
+    account_user = current_account.account_users.find_by(user_id: current_user.id)
+    return true if account_user&.administrator?
+
+    current_pipeline.board_memberships.exists?(user_id: current_user.id)
+  end
 
   def stream_name
     "pipeline:#{current_account.id}:#{current_pipeline.id}"

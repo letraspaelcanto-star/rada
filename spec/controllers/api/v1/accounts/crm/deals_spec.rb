@@ -18,6 +18,10 @@ RSpec.describe 'CRM Deals API', type: :request do
   let(:first_stage) { pipeline.stages.find_by(name: 'nuevo') }
   let(:won_stage) { pipeline.stages.find_by(name: 'ganado') }
 
+  before do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/crm/deals' do
     let!(:deal_open) { create_deal(title: 'Silla de ruedas', stage: first_stage) }
     let!(:deal_won) { create_deal(title: 'Muletas premium', stage: won_stage, status: :won) }
@@ -149,6 +153,32 @@ RSpec.describe 'CRM Deals API', type: :request do
             headers: agent.create_new_auth_token
 
       expect(deal.reload.custom_attributes['producto']).to eq('andador_aluminio')
+    end
+  end
+
+  describe 'moving a deal across boards' do
+    let!(:board_b) do
+      AgencyCrm::Pipeline.create!(account: account, name: 'Soporte post-venta').tap do |p|
+        p.stages.create!(account: account, name: 'nuevo', position: 0, win_probability: 10)
+      end
+    end
+    let(:board_b_stage) { board_b.stages.first }
+    let(:mover) { create(:user, account: account, role: :agent) }
+
+    before do
+      AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: mover, role: :viewer)
+      AgencyCrm::BoardMembership.create!(account: account, pipeline: board_b, user: mover, role: :editor)
+    end
+
+    it 'forbids moving a deal out of a board where the agent is only a viewer' do
+      deal_on_a = create_deal(title: 'Deal en board A', stage: first_stage)
+
+      patch "/api/v1/accounts/#{account.id}/crm/deals/#{deal_on_a.id}",
+            params: { deal: { agency_pipeline_id: board_b.id, agency_pipeline_stage_id: board_b_stage.id } },
+            headers: mover.create_new_auth_token
+
+      expect(response).to have_http_status(:forbidden)
+      expect(deal_on_a.reload.agency_pipeline_id).to eq(pipeline.id)
     end
   end
 

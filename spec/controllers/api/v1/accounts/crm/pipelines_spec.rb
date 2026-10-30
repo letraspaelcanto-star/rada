@@ -16,6 +16,10 @@ RSpec.describe 'CRM Pipelines API', type: :request do
     end
   end
 
+  before do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :viewer)
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/crm/pipelines' do
     it 'returns unauthorized for unauthenticated users' do
       get "/api/v1/accounts/#{account.id}/crm/pipelines"
@@ -38,6 +42,15 @@ RSpec.describe 'CRM Pipelines API', type: :request do
 
       expect(response.parsed_body['payload'].map { |p| p['id'] }).not_to include(other_pipeline.id)
     end
+
+    it 'hides every pipeline from agents without membership in any board' do
+      outsider = create(:user, account: account, role: :agent)
+
+      get "/api/v1/accounts/#{account.id}/crm/pipelines", headers: outsider.create_new_auth_token
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['payload']).to eq([])
+    end
   end
 
   describe 'POST /api/v1/accounts/{account.id}/crm/pipelines' do
@@ -52,13 +65,14 @@ RSpec.describe 'CRM Pipelines API', type: :request do
       expect(response.parsed_body['payload']['name']).to eq('Soporte post-venta')
     end
 
-    it 'forbids agents' do
+    it 'forbids non-administrators' do
       expect do
         post "/api/v1/accounts/#{account.id}/crm/pipelines", params: params, headers: agent.create_new_auth_token
       end.not_to change(AgencyCrm::Pipeline, :count)
 
-      # Chatwoot renderiza Pundit::NotAuthorizedError como 401 (RequestExceptionHandler)
-      expect(response).to have_http_status(:unauthorized)
+      # El CRM renderiza la denegación de policy como 403 (Api::V1::Accounts::Crm::Authorizable);
+      # 401 queda reservado para no autenticado.
+      expect(response).to have_http_status(:forbidden)
     end
   end
 
@@ -75,6 +89,14 @@ RSpec.describe 'CRM Pipelines API', type: :request do
       expect(body['stages'].map { |s| s['id'] }).to eq(pipeline.stages.order(position: :asc).map(&:id))
       stage_json = body['stages'].find { |s| s['id'] == stage.id }
       expect(stage_json['deals'].map { |d| d['id'] }).to include(deal.id)
+    end
+
+    it 'returns 404 for agents without membership (el board no existe para ellos)' do
+      outsider = create(:user, account: account, role: :agent)
+
+      get "/api/v1/accounts/#{account.id}/crm/pipelines/#{pipeline.id}", headers: outsider.create_new_auth_token
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 
@@ -98,13 +120,13 @@ RSpec.describe 'CRM Pipelines API', type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
-    it 'forbids agents' do
+    it 'forbids non-administrators' do
       reversed = pipeline.stages.order(position: :asc).map(&:id).reverse
 
       patch "/api/v1/accounts/#{account.id}/crm/pipelines/#{pipeline.id}/stages/reorder",
             params: { stage_ids: reversed }, headers: agent.create_new_auth_token
 
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:forbidden)
     end
   end
 
