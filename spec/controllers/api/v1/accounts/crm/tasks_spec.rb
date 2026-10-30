@@ -85,12 +85,14 @@ RSpec.describe 'CRM Tasks API', type: :request do
       expect(other_task.reload.title).to eq('Foreign task')
     end
 
-    it 'does not link a deal from another account on create' do
-      post "/api/v1/accounts/#{account.id}/crm/tasks",
-           params: { task: { title: 'Follow up', agency_deal_id: other_deal.id } }, headers: agent.create_new_auth_token
+    it 'rejects a deal from another account on create',
+       pending: 'ítem 3: ids de otra cuenta deben dar 422 (hoy se descartan en silencio)' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/crm/tasks",
+             params: { task: { title: 'Follow up', agency_deal_id: other_deal.id } }, headers: agent.create_new_auth_token
+      end.not_to change(AgencyCrm::Task, :count)
 
-      expect(response).to have_http_status(:success)
-      expect(AgencyCrm::Task.order(:id).last.agency_deal_id).to be_nil
+      expect(response).to have_http_status(:unprocessable_entity)
     end
   end
 end
