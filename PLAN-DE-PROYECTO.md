@@ -132,7 +132,7 @@ agency_board_memberships        # control de acceso por board
 
 Invariantes:
 - Todo query filtra por `account_id` (test automatizado que lo verifique en cada modelo nuevo — crítico para no filtrar datos entre clientes de la agencia).
-- `conversation_id` es 0..1: una conversación puede tener a lo sumo un deal abierto por pipeline (constraint lógica, no DB).
+- `conversation_id` es 0..1. **Un contacto** puede tener a lo sumo un deal abierto por pipeline (constraint lógica, no DB; ADR 0003 — antes decía "una conversación").
 - Las etapas `is_won/is_lost` son únicas por pipeline.
 - `priority` del deal replica el enum de `Conversation` — la sincronización deal↔conversación es copia directa de valor, sin mapeo.
 - Borrado: deals en soft-delete (`discarded_at`), pipelines/stages hard con restricción si tienen deals.

@@ -20,8 +20,8 @@ Leé esto entero antes de tocar nada. `CLAUDE.md` es un symlink a este archivo: 
 6. **WhatsApp solo por Cloud API oficial.** Nada de Evolution/Baileys/no oficiales en este repo.
 7. **Lo que NO va en este repo:** panel de agencia multi-cuenta, billing, white-label, packs por vertical, provisioning. Aunque el PLAN original los menciona (§3, §5 panel de agencia, §6 semanas 7–9), la decisión vigente es que van al kernel/portal, fuera de Chatwoot. Si te piden algo de eso acá, parás y preguntás.
 8. **Nada de código de producción se escribe sin spec.** La regla upstream "avoid writing specs unless asked" NO aplica en este fork. Modelo → spec de modelo en `engines/agency_crm/spec`. Controlador → request spec en `spec/controllers/api/v1/accounts/crm`. Canal → `spec/channels/agency_crm`. Store Vue → `spec.js` al lado.
-9. **Un ítem por sesión.** Tomás UN ítem del sprint actual (`docs/sprints/actual.md`). Si descubrís otro problema, lo anotás en `docs/sprints/backlog.md` con una línea y seguís. No lo arreglás "ya que estás".
-10. **Mergean Pablo o W1 (Claude) por delegación.** W1 mergea solo con CI verde, revisión completa contra este archivo y el brief, sin cambios de contrato sin ADR aprobado, y sin tocar `docker/`, `deploy/` ni workflows de build (esos los revisa Lis). Kimi y los demás agentes constructores abren el PR y paran: no aprueban, no mergean, no pushean a `develop`/`main`, no borran ramas ajenas, no tocan tags.
+9. **Un ítem por sesión.** Tomás UN ítem del sprint actual: el de menor "Orden" en estado `próximo` en `docs/sprints/actual.md`, y seguís su brief en `docs/sprints/briefs/`. Si descubrís otro problema, lo anotás en `docs/sprints/backlog.md` con una línea y seguís. No lo arreglás "ya que estás".
+10. **Mergean Pablo o W1 (Claude) por delegación.** W1 mergea solo con CI verde, revisión completa contra este archivo y el brief, sin cambios de contrato sin ADR aprobado, y sin cambios en `docker/`, `deploy/` ni workflows de build (esos los revisa Lis). Kimi y los demás agentes constructores abren el PR con la plantilla y paran: no aprueban, no mergean, no pushean a `develop`/`main`, no borran ramas ajenas, no tocan tags.
 
 ## Comandos
 
@@ -39,12 +39,14 @@ En local corré `make fork-test`. La regresión core (`CORE_REGRESSION`) la corr
 
 Entorno: Ruby `.ruby-version` (3.4.4) vía rbenv, `pnpm`, Postgres con pgvector, Redis. Dev con Docker: copiá `deploy/docker-compose.override.yaml` a la raíz (app en :3001).
 
-Cada agente trabaja en su propia carpeta: Kimi Code en el worktree `rada-code`, Kimi Work en `rada`. Antes de abrir un PR: `gh repo set-default letraspaelcanto-star/rada` (si no, gh apunta a chatwoot/chatwoot).
+- **Una carpeta por agente:** Kimi Code trabaja en `rada-code`, Kimi Work en `rada`. Nunca dos agentes en la misma carpeta.
+- **Antes de abrir un PR:** `gh repo set-default letraspaelcanto-star/rada`. Si no, `gh` apunta a `chatwoot/chatwoot` (el remote `upstream`).
+- **Commiteá solo tus archivos.** Si aparecen modificados `app/models/*`, `enterprise/*` o `db/schema.rb` sin que los hayas tocado, son ruido de fin de línea o de anotaciones: no los commitees.
 
 ## Terminado significa
 
 - Rama `feat/<slug>` o `fix/<slug>` desde `develop`, PR contra `develop` con la plantilla completa.
-- `make fork-ci` verde local y en GitHub. Un spec que se omite con `|| true`, `skip` o `xit` no cuenta como verde.
+- `make fork-test` verde local y el CI completo verde en GitHub. Un spec que se omite con `|| true`, `skip` o `xit` no cuenta como verde (un `pending` con motivo, pedido por el brief, sí).
 - Specs nuevos para todo lo nuevo; el spec de aislamiento por cuenta si hay modelo nuevo.
 - Strings de UI en `i18n/locale/en/agencyCrm.json` y `es/agencyCrm.json`, nunca hardcodeadas.
 - Línea en `CHANGELOG-AGENCY.md` bajo "Sin publicar".
@@ -64,7 +66,7 @@ Cada agente trabaja en su propia carpeta: Kimi Code en el worktree `rada-code`, 
 | Front | `app/javascript/dashboard/routes/dashboard/crm/`, `stores/agencyCrm.js`, `api/crm*.js`, `composables/useCrmPipelineCable.js` | Vue 3 `<script setup>`, Pinia-style store, Tailwind, `components-next` |
 | Seed | `lib/tasks/agency_crm.rake` | Pipeline OB: nuevo → contactado → cotizado → pensando / visito_local → ganado / perdido |
 
-Decisiones ya tomadas que no se rediscuten en un PR: `assignee_id` (no `owner_id`); `priority` con el mismo enum que `Conversation`; `company_id` apunta a `companies` de CE; un deal abierto por pipeline por conversación; deals con soft-delete (`discarded_at`), pipelines/stages hard con restricción.
+Decisiones ya tomadas que no se rediscuten en un PR: `assignee_id` (no `owner_id`); `priority` con el mismo enum que `Conversation`; `company_id` apunta a `companies` de CE; un deal abierto por **contacto** y pipeline (ADR 0003); deals con soft-delete (`discarded_at`), pipelines/stages hard con restricción.
 
 ## Convenciones heredadas de Chatwoot (siguen valiendo)
 
