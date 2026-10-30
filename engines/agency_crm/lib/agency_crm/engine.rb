@@ -15,6 +15,12 @@ class AgencyCrm::Engine < Rails::Engine
   # app/models/account.rb — la clase upstream roza el límite de ClassLength.
   config.to_prepare do
     Account.include AgencyCrm::AccountExtension
+    Company.include AgencyCrm::CompanyExtension
+    Conversation.include AgencyCrm::ConversationExtension
+    User.include AgencyCrm::UserExtension
+    # ADR 0002: los deals se pasan al contacto base antes de destruir el mergee;
+    # sin esto el merge falla entero (nullify vs contact_id NOT NULL).
+    ContactMergeAction.prepend AgencyCrm::ContactMergeExtension
     # Los eventos deal_* llegan al WebhookListener de Chatwoot; los metodos que
     # los entregan viven en el engine para no tocar app/listeners (AGENTS.md regla 4).
     WebhookListener.include AgencyCrm::WebhookListenerExtension

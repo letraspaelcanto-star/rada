@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_23_130006) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_30_183000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -150,7 +150,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_130006) do
     t.string "title", null: false
     t.bigint "value_cents", default: 0, null: false
     t.string "currency", default: "ARS", null: false
-    t.bigint "contact_id", null: false
+    t.bigint "contact_id"
     t.bigint "conversation_id"
     t.bigint "company_id"
     t.bigint "assignee_id"
@@ -203,7 +203,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_130006) do
     t.bigint "account_id", null: false
     t.bigint "agency_deal_id"
     t.bigint "conversation_id"
-    t.bigint "assignee_id", null: false
+    t.bigint "assignee_id"
     t.string "title", null: false
     t.datetime "due_at"
     t.datetime "completed_at"

@@ -10,7 +10,7 @@ class AgencyCrm::Task < ApplicationRecord
   belongs_to :account
   belongs_to :deal, class_name: 'AgencyCrm::Deal', foreign_key: 'agency_deal_id', inverse_of: :tasks, optional: true
   belongs_to :conversation, class_name: '::Conversation', optional: true
-  belongs_to :assignee, class_name: '::User'
+  belongs_to :assignee, class_name: '::User', optional: true # ADR 0002: nullable desde 20261030183000
 
   validates :title, presence: true
 
