@@ -12,6 +12,7 @@ RSpec.describe 'CRM Tasks API', type: :request do
   let!(:deal) do
     AgencyCrm::Deal.create!(account: account, pipeline: pipeline, stage: stage, contact: contact, title: 'Silla de ruedas')
   end
+
   before do
     AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
   end
