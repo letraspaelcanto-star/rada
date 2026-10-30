@@ -2,6 +2,8 @@
 
 Fork con fines comerciales de la agencia. Ver `PLAN-DE-PROYECTO.md` para el plan completo.
 
+**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
+
 ## Identidad del fork
 
 | | |

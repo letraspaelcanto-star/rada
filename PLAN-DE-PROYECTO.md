@@ -44,6 +44,8 @@ Stack: Ruby on Rails + Vue.js + PostgreSQL + Redis (heredado de Chatwoot). Sidek
 
 ## 3. Arquitectura funcional
 
+**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  SUPER ADMIN DE AGENCIA (nuevo, fuera de accounts)       │
@@ -181,6 +183,8 @@ Realtime: canal ActionCable dedicado `pipeline:<account_id>:<pipeline_id>` — e
 
 Webhooks hacia afuera (para n8n): `deal_created`, `deal_stage_changed`, `deal_won`, `deal_lost` — payload incluye `custom_attributes` y datos de la conversación linkeada.
 
+**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
+
 Panel de agencia — **NO se crea namespace `/agency/` nuevo**: se extiende lo que ya existe en CE:
 - **Super-admin web** (ya existe en CE): namespace `/super_admin` con devise `SuperAdmin`, CRUD de accounts, `seed`, `reset_cache`. Nuestro panel de agencia vive acá, montado como controladores/vistas del engine dentro de ese namespace.
 - **Platform API** (ya existe en CE): `/platform/api/v1/accounts` con CRUD completo de cuentas y `account_users`. El provisioning programático se extiende acá:
@@ -223,6 +227,9 @@ Todo endpoint nuevo del panel lleva prefijo `agency_` sobre recursos existentes,
 | Agencia | Super-admin: dashboard transversal + provisioning de cuentas |
 
 ### Semanas 6–7 — Modo agencia + white-label
+
+**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
+
 - [ ] Panel agencia completo: métricas por cuenta, límites por plan, suspensión.
 - [ ] Billing de uso por cuenta (medición + export).
 - [ ] White-label: dominio por cuenta, PWA con marca, emails transaccionales.
