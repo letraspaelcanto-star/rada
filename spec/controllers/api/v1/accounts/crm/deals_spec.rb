@@ -17,6 +17,9 @@ RSpec.describe 'CRM Deals API', type: :request do
   end
   let(:first_stage) { pipeline.stages.find_by(name: 'nuevo') }
   let(:won_stage) { pipeline.stages.find_by(name: 'ganado') }
+  let!(:editor_membership) do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
+  end
 
   describe 'GET /api/v1/accounts/{account.id}/crm/deals' do
     let!(:deal_open) { create_deal(title: 'Silla de ruedas', stage: first_stage) }

@@ -22,6 +22,10 @@ RSpec.describe AgencyCrm::PipelineChannel do
     end
   end
 
+  let!(:agent_membership) do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
+  end
+
   before do
     stub_connection
   end
@@ -62,5 +66,34 @@ RSpec.describe AgencyCrm::PipelineChannel do
               account_id: account.id, pipeline_id: 0)
 
     expect(subscription).to be_rejected
+  end
+
+  it 'rejects agents without membership in the pipeline board' do
+    outsider = create(:user, account: account, role: :agent)
+
+    subscribe(user_id: outsider.id, pubsub_token: outsider.pubsub_token,
+              account_id: account.id, pipeline_id: pipeline.id)
+
+    expect(subscription).to be_rejected
+  end
+
+  it 'subscribes an account administrator without membership' do
+    admin = create(:user, account: account, role: :administrator)
+
+    subscribe(user_id: admin.id, pubsub_token: admin.pubsub_token,
+              account_id: account.id, pipeline_id: pipeline.id)
+
+    expect(subscription).to be_confirmed
+    expect(subscription).to have_stream_for("pipeline:#{account.id}:#{pipeline.id}")
+  end
+
+  it 'subscribes a viewer (read access is enough for the stream)' do
+    viewer = create(:user, account: account, role: :agent)
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: viewer, role: :viewer)
+
+    subscribe(user_id: viewer.id, pubsub_token: viewer.pubsub_token,
+              account_id: account.id, pipeline_id: pipeline.id)
+
+    expect(subscription).to be_confirmed
   end
 end

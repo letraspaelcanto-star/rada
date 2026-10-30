@@ -2,8 +2,11 @@
 
 # Timeline de un deal — contrato PLAN-DE-PROYECTO.md §5.
 class Api::V1::Accounts::Crm::DealActivitiesController < Api::V1::Accounts::BaseController
-  before_action -> { check_authorization(AgencyCrm::DealActivity) }
+  include Api::V1::Accounts::Crm::Authorizable
+
   before_action :fetch_deal
+  # El record de la policy es el deal padre: index?/create? miran su board.
+  before_action -> { check_authorization(@deal, policy_class: AgencyCrm::DealActivityPolicy) }
 
   RESULTS_PER_PAGE = 50
 

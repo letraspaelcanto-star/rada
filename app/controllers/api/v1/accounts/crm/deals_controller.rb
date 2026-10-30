@@ -2,6 +2,8 @@
 
 # Deals (tarjetas del kanban) del CRM de agencia — contrato PLAN-DE-PROYECTO.md §5.
 class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseController
+  include Api::V1::Accounts::Crm::Authorizable
+
   include Sift
   sort_on :updated_at, type: :string
 
@@ -9,7 +11,7 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
 
   # Modelo explícito: el controller está bajo namespace crm/ y classify sobre
   # "deals" resolvería ::Deal (constante inexistente).
-  before_action -> { check_authorization(AgencyCrm::Deal) }
+  before_action -> { check_authorization(AgencyCrm::Deal) }, only: [:index]
   before_action :fetch_deal, only: [:update]
 
   # GET /crm/deals?stage_id=&status=&q=&page=
@@ -21,6 +23,9 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
   def create
     @deal = Current.account.agency_crm_deals.new(deal_params.except(:contact_id, :conversation_id, :company_id, :assignee_id))
     assign_linked_records
+    authorize_crm(@deal)
+    return if performed?
+
     @deal.save!
     render 'api/v1/accounts/crm/deals/show'
   end
@@ -28,6 +33,9 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
   def update
     @deal.assign_attributes(deal_params.except(:contact_id, :conversation_id, :company_id, :assignee_id))
     assign_linked_records
+    authorize_crm(@deal)
+    return if performed?
+
     @deal.save!
     render 'api/v1/accounts/crm/deals/show'
   end
@@ -72,7 +80,7 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
   end
 
   def filtered_deals
-    deals = Current.account.agency_crm_deals.kept.includes(:stage, :contact, :assignee)
+    deals = policy_scope(Current.account.agency_crm_deals.kept).includes(:stage, :contact, :assignee)
     deals = deals.where(agency_pipeline_stage_id: params[:stage_id]) if params[:stage_id].present?
     deals = deals.where(status: params[:status]) if params[:status].present?
     deals = filter_by_search(deals) if params[:q].present?

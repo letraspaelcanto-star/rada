@@ -15,7 +15,7 @@ Estados: `próximo` (se puede tomar), `en espera` (depende de otro ítem o de un
 
 | Orden | # | Ítem | Brief | Estado |
 |---|---|---|---|---|
-| 1 | 5 | `BoardMembership` aplicada en policies (permisos por board) | [briefs/05-board-membership.md](briefs/05-board-membership.md) | próximo |
+| 1 | 5 | `BoardMembership` aplicada en policies (permisos por board) | [briefs/05-board-membership.md](briefs/05-board-membership.md) | en curso (rama fix/board-membership-policies) |
 | 2 | 9 | Borrados y merge de contactos | [briefs/09-borrados-y-merge.md](briefs/09-borrados-y-merge.md) | en espera (después de la 5) |
 | 3 | 3 | Un deal abierto por **contacto** y pipeline + validaciones de ids | [briefs/03-un-deal-por-contacto.md](briefs/03-un-deal-por-contacto.md) | en espera (después de la 9) |
 | 4 | 10 | `actor_type` de las actividades lo decide el server | [briefs/10-actor-type.md](briefs/10-actor-type.md) | en espera (después de la 3) |

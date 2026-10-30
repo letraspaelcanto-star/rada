@@ -14,6 +14,9 @@ RSpec.describe 'CRM Deal Activities API', type: :request do
   let!(:deal) do
     AgencyCrm::Deal.create!(account: account, pipeline: pipeline, stage: stage, contact: contact, title: 'Silla de ruedas')
   end
+  let!(:editor_membership) do
+    AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
+  end
 
   describe 'GET /api/v1/accounts/{account.id}/crm/deals/{deal.id}/activities' do
     it 'returns the timeline ordered by created_at desc' do
