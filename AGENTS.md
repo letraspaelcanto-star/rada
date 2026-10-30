@@ -21,7 +21,7 @@ Leé esto entero antes de tocar nada. `CLAUDE.md` es un symlink a este archivo: 
 7. **Lo que NO va en este repo:** panel de agencia multi-cuenta, billing, white-label, packs por vertical, provisioning. Aunque el PLAN original los menciona (§3, §5 panel de agencia, §6 semanas 7–9), la decisión vigente es que van al kernel/portal, fuera de Chatwoot. Si te piden algo de eso acá, parás y preguntás.
 8. **Nada de código de producción se escribe sin spec.** La regla upstream "avoid writing specs unless asked" NO aplica en este fork. Modelo → spec de modelo en `engines/agency_crm/spec`. Controlador → request spec en `spec/controllers/api/v1/accounts/crm`. Canal → `spec/channels/agency_crm`. Store Vue → `spec.js` al lado.
 9. **Un ítem por sesión.** Tomás UN ítem del sprint actual (`docs/sprints/actual.md`). Si descubrís otro problema, lo anotás en `docs/sprints/backlog.md` con una línea y seguís. No lo arreglás "ya que estás".
-10. **Nadie mergea salvo Pablo.** El agente abre el PR con la plantilla y para. No aprueba, no mergea, no pushea a `develop`/`main`, no borra ramas ajenas, no toca tags.
+10. **Mergean Pablo o W1 (Claude) por delegación.** W1 mergea solo con CI verde, revisión completa contra este archivo y el brief, sin cambios de contrato sin ADR aprobado, y sin tocar `docker/`, `deploy/` ni workflows de build (esos los revisa Lis). Kimi y los demás agentes constructores abren el PR y paran: no aprueban, no mergean, no pushean a `develop`/`main`, no borran ramas ajenas, no tocan tags.
 
 ## Comandos
 
@@ -35,7 +35,11 @@ make run           # overmind con Procfile.dev (upstream)
 bundle exec rails agency_crm:seed_ob_pipeline ACCOUNT_ID=<id>   # pipeline OB, idempotente
 ```
 
+En local corré `make fork-test`. La regresión core (`CORE_REGRESSION`) la corre el CI de GitHub: en Docker sobre Windows tarda cerca de una hora y 4 ejemplos de `conversation_spec` fallan por zona horaria.
+
 Entorno: Ruby `.ruby-version` (3.4.4) vía rbenv, `pnpm`, Postgres con pgvector, Redis. Dev con Docker: copiá `deploy/docker-compose.override.yaml` a la raíz (app en :3001).
+
+Cada agente trabaja en su propia carpeta: Kimi Code en el worktree `rada-code`, Kimi Work en `rada`. Antes de abrir un PR: `gh repo set-default letraspaelcanto-star/rada` (si no, gh apunta a chatwoot/chatwoot).
 
 ## Terminado significa
 
