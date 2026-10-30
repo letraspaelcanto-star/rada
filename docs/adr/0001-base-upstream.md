@@ -14,7 +14,7 @@ El fork arrancó sobre `develop` de chatwoot/chatwoot (@cf60e459). `develop` es 
 
 ## Decisión
 
-La base del fork pasa a ser **tags de release de upstream, no `develop`**. El primer tag propio será **`v4.19.0-agency.1` al cerrar el Sprint 3.5**, y desde entonces el sync se hace contra el **próximo tag oficial** de Chatwoot, no contra la punta de `develop`. El versionado `v<upstream>-agency.<n>` queda así anclado a un release real de upstream.
+La base del fork pasa a ser **tags de release de upstream, no `develop`**. El primer tag propio será **`v4.19.0-agency.1`** (nombre provisorio: la base actual es develop posterior a v4.19.0; el número se alinea en el primer sync contra un tag oficial, hoy v4.19.1) al cerrar el Sprint 3.5, y desde entonces el sync se hace contra el **próximo tag oficial** de Chatwoot, no contra la punta de `develop`. El versionado `v<upstream>-agency.<n>` queda así anclado a un release real de upstream.
 
 ## Consecuencias
 

@@ -44,7 +44,7 @@ Stack: Ruby on Rails + Vue.js + PostgreSQL + Redis (heredado de Chatwoot). Sidek
 
 ## 3. Arquitectura funcional
 
-**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
+**Fuera de Rada (decisión 24/10):** el bloque SUPER ADMIN DE AGENCIA (dashboard, provisioning, billing, planes) y el Panel Agencia-in-a-box (white-label, dominio, plantillas por rubro) van al kernel/portal. Inbox y CRM Kanban sí son Rada. Ver AGENTS.md regla 7.
 
 ```
 ┌─────────────────────────────────────────────────────────┐

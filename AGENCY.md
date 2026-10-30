@@ -2,8 +2,6 @@
 
 Fork con fines comerciales de la agencia. Ver `PLAN-DE-PROYECTO.md` para el plan completo.
 
-**Fuera de Rada (decisión 24/10):** va al kernel/portal. Ver AGENTS.md regla 7.
-
 ## Identidad del fork
 
 | | |
@@ -17,9 +15,9 @@ Fork con fines comerciales de la agencia. Ver `PLAN-DE-PROYECTO.md` para el plan
 ## Qué se agrega sobre el CE (ver contratos congelados v1.0 en PLAN-DE-PROYECTO.md)
 
 1. **Engine `AgencyCrm`** — pipelines kanban, deals, actividades, tareas (`/api/v1/accounts/:account_id/crm/...`)
-2. **Panel de agencia** — extiende el super-admin y la platform API existentes (endpoints con prefijo `agency_`)
+2. **Panel de agencia** — extiende el super-admin y la platform API existentes (endpoints con prefijo `agency_`) — **fuera de Rada (decisión 24/10): va al kernel/portal, ver AGENTS.md regla 7.**
 3. **AI engine provider-agnostic** — OpenAI/Anthropic/Google/local vía endpoint compatible
-4. **White-label** — dominio y marca por cuenta
+4. **White-label** — dominio y marca por cuenta — **fuera de Rada (decisión 24/10): va al kernel/portal, ver AGENTS.md regla 7.**
 
 ## Flujo de trabajo
 
