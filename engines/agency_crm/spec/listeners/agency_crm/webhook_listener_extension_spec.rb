@@ -47,6 +47,19 @@ RSpec.describe AgencyCrm::WebhookListenerExtension do
     end
   end
 
+  it 'entrega deal_stage_changed con contact nil cuando el contacto fue borrado' do
+    deal
+    contact.destroy!
+    webhook = create(:webhook, account: account, inbox: nil, subscriptions: ['deal_stage_changed'])
+    event = Events::Base.new('deal_stage_changed', Time.zone.now, deal: deal.reload,
+                                                                  changed_attributes: { 'agency_pipeline_stage_id' => [1, 2] })
+
+    expect(WebhookJob).to receive(:perform_later).with(
+      webhook.url, hash_including(contact: nil), :account_webhook, secret: webhook.secret, delivery_id: instance_of(String)
+    )
+    listener.deal_stage_changed(event)
+  end
+
   it 'incluye la conversacion linkeada y los custom_attributes en el payload' do
     conversation = create(:conversation, account: account, contact: contact)
     deal.update!(conversation: conversation, custom_attributes: { 'obra_social' => 'PAMI' })

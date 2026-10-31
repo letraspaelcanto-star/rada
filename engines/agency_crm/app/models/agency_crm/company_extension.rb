@@ -6,6 +6,7 @@ module AgencyCrm::CompanyExtension
   extend ActiveSupport::Concern
 
   included do
-    has_many :agency_crm_deals, class_name: 'AgencyCrm::Deal', foreign_key: :company_id, dependent: :nullify
+    has_many :agency_crm_deals, class_name: 'AgencyCrm::Deal', foreign_key: :company_id,
+                                dependent: :nullify, inverse_of: :company
   end
 end

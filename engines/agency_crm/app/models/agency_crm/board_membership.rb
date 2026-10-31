@@ -9,7 +9,7 @@ class AgencyCrm::BoardMembership < ApplicationRecord
 
   belongs_to :account
   belongs_to :pipeline, class_name: 'AgencyCrm::Pipeline', foreign_key: 'agency_pipeline_id', inverse_of: :board_memberships
-  belongs_to :user, class_name: '::User'
+  belongs_to :user, class_name: '::User', inverse_of: :agency_crm_board_memberships
 
   enum :role, { viewer: 0, editor: 1 }
 

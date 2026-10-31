@@ -27,7 +27,7 @@ RSpec.describe AgencyCrm::ContactMergeExtension do
       deal = create_deal(mergee_contact)
 
       expect { merge_contacts! }.to change { deal.reload.contact_id }.to(base_contact.id)
-        .and change(Contact, :count).by(-1)
+                                                                     .and change(Contact, :count).by(-1)
       expect(Contact.exists?(mergee_contact.id)).to be(false)
     end
 
@@ -35,7 +35,7 @@ RSpec.describe AgencyCrm::ContactMergeExtension do
       base_deal = create_deal(base_contact, title: 'Deal del base')
       mergee_deal = create_deal(mergee_contact, title: 'Deal del mergee')
       assignee = create(:user, account: account)
-      mergee_deal.update_columns(assignee_id: assignee.id, created_at: 1.minute.from_now)
+      mergee_deal.update!(assignee_id: assignee.id, created_at: 1.minute.from_now)
 
       merge_contacts!
 
@@ -85,17 +85,17 @@ RSpec.describe AgencyCrm::ContactMergeExtension do
 
     it 'borrar la conversación pone conversation_id en NULL de deals y tareas' do
       conversation = create(:conversation, account: account)
-      deal.update_columns(conversation_id: conversation.id)
+      deal.update!(conversation_id: conversation.id)
       task = AgencyCrm::Task.create!(account: account, conversation: conversation, title: 'Llamar al cliente')
 
-      expect { conversation.destroy! }.not_to change { [AgencyCrm::Deal.count, AgencyCrm::Task.count] }
+      expect { conversation.destroy! }.not_to(change { [AgencyCrm::Deal.count, AgencyCrm::Task.count] })
       expect(deal.reload.conversation_id).to be_nil
       expect(task.reload.conversation_id).to be_nil
     end
 
     it 'borrar la empresa pone company_id en NULL del deal' do
       company = create(:company, account: account)
-      deal.update_columns(company_id: company.id)
+      deal.update!(company_id: company.id)
 
       expect { company.destroy! }.not_to change(AgencyCrm::Deal, :count)
       expect(deal.reload.company_id).to be_nil
@@ -103,7 +103,7 @@ RSpec.describe AgencyCrm::ContactMergeExtension do
 
     it 'borrar el usuario pone assignee en NULL de deals y tareas y destruye sus membresías de board' do
       agent = create(:user, account: account)
-      deal.update_columns(assignee_id: agent.id)
+      deal.update!(assignee_id: agent.id)
       task = AgencyCrm::Task.create!(account: account, assignee: agent, title: 'Llamar al cliente')
       AgencyCrm::BoardMembership.create!(account: account, pipeline: pipeline, user: agent, role: :editor)
 

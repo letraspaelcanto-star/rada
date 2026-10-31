@@ -18,9 +18,9 @@ class AgencyCrm::Deal < ApplicationRecord
   # ADR 0002: nullable porque "el contacto fue borrado" deja el deal huérfano;
   # la API y la creación siguen exigiendo contacto (validación on: :create).
   belongs_to :contact, class_name: '::Contact', inverse_of: :agency_crm_deals, optional: true
-  belongs_to :conversation, class_name: '::Conversation', optional: true
-  belongs_to :company, class_name: '::Company', optional: true
-  belongs_to :assignee, class_name: '::User', optional: true
+  belongs_to :conversation, class_name: '::Conversation', optional: true, inverse_of: :agency_crm_deals
+  belongs_to :company, class_name: '::Company', optional: true, inverse_of: :agency_crm_deals
+  belongs_to :assignee, class_name: '::User', optional: true, inverse_of: :agency_crm_deals
 
   has_many :activities, class_name: 'AgencyCrm::DealActivity', foreign_key: 'agency_deal_id',
                         inverse_of: :deal, dependent: :destroy
@@ -71,7 +71,7 @@ class AgencyCrm::Deal < ApplicationRecord
       account: account.webhook_data,
       pipeline: pipeline.slice(:id, :name).symbolize_keys,
       stage: stage.slice(:id, :name, :is_won, :is_lost).symbolize_keys,
-      contact: contact.webhook_data,
+      contact: contact&.webhook_data,
       conversation: conversation&.webhook_data,
       assignee: assignee&.webhook_data
     )

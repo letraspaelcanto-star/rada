@@ -44,7 +44,7 @@ module AgencyCrm::ContactMergeExtension
   # Sin callbacks a propósito: el traslado no es un evento de negocio del deal
   # (no despacha webhook ni saca la tarjeta del kanban).
   def move_deal(deal)
-    deal.update_columns(contact_id: @base_contact.id, updated_at: Time.current)
+    deal.update_columns(contact_id: @base_contact.id, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations -- update_columns es la forma de saltear callbacks a propósito
   end
 
   def flag_merge_duplicate(deal, other_deal)

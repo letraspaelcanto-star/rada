@@ -7,9 +7,11 @@ module AgencyCrm::UserExtension
   extend ActiveSupport::Concern
 
   included do
-    has_many :agency_crm_deals, class_name: 'AgencyCrm::Deal', foreign_key: :assignee_id, dependent: :nullify
-    has_many :agency_crm_tasks, class_name: 'AgencyCrm::Task', foreign_key: :assignee_id, dependent: :nullify
+    has_many :agency_crm_deals, class_name: 'AgencyCrm::Deal', foreign_key: :assignee_id,
+                                dependent: :nullify, inverse_of: :assignee
+    has_many :agency_crm_tasks, class_name: 'AgencyCrm::Task', foreign_key: :assignee_id,
+                                dependent: :nullify, inverse_of: :assignee
     has_many :agency_crm_board_memberships, class_name: 'AgencyCrm::BoardMembership', foreign_key: :user_id,
-                                             dependent: :destroy
+                                            dependent: :destroy, inverse_of: :user
   end
 end
