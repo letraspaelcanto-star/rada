@@ -15,7 +15,7 @@ Estados: `próximo` (se puede tomar), `en espera` (depende de otro ítem o de un
 
 | Orden | # | Ítem | Brief | Estado |
 |---|---|---|---|---|
-| 3 | 3 | Un deal abierto por **contacto** y pipeline + validaciones de ids | [briefs/03-un-deal-por-contacto.md](briefs/03-un-deal-por-contacto.md) | próximo |
+| 3 | 3 | Un deal abierto por **contacto** y pipeline + validaciones de ids | [briefs/03-un-deal-por-contacto.md](briefs/03-un-deal-por-contacto.md) | en curso (rama fix/validaciones-deal) |
 | 4 | 10 | `actor_type` de las actividades lo decide el server | [briefs/10-actor-type.md](briefs/10-actor-type.md) | en espera (después de la 3) |
 | 5 | 6 | Paginación y filtros de `GET /crm/deals` | [briefs/06-paginacion-deals.md](briefs/06-paginacion-deals.md) | en espera (después de la 10) |
 | — | 7 | Decidir base upstream | ADR 0001 (propuesto) | decide Pablo |
