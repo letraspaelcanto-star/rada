@@ -35,6 +35,8 @@ class AgencyCrm::Deal < ApplicationRecord
   validates :value_cents, numericality: { greater_than_or_equal_to: 0 }
   validate :stage_matches_account
   validate :pipeline_matches_account
+  validate :stage_belongs_to_pipeline
+  validate :single_open_deal_per_contact_and_pipeline
 
   scope :kept, -> { where(discarded_at: nil) }
   scope :discarded, -> { where.not(discarded_at: nil) }
@@ -164,5 +166,38 @@ class AgencyCrm::Deal < ApplicationRecord
     return if pipeline.blank? || account.blank?
 
     errors.add(:pipeline, :invalid) if pipeline.account_id != account_id
+  end
+
+  # ADR 0003: la etapa tiene que ser del MISMO pipeline del deal, no solo de la
+  # misma cuenta; si no, la tarjeta queda huérfana en el board equivocado.
+  def stage_belongs_to_pipeline
+    return if stage.blank? || agency_pipeline_id.blank?
+
+    errors.add(:stage, :invalid) unless stage.agency_pipeline_id == agency_pipeline_id
+  end
+
+  # ADR 0003: a lo sumo un deal abierto (status open, no descartado) por
+  # (account, contacto, pipeline). Solo validación de modelo: el merge de
+  # contactos (ADR 0002) puede dejar dos abiertos a propósito y no pasa por acá
+  # (usa update_columns). Sin contacto (borrado) no se puede vigilar el duplicado.
+  def single_open_deal_per_contact_and_pipeline
+    return if contact_id.blank? || discarded_at.present?
+    return unless will_be_open_after_save?
+
+    existing = AgencyCrm::Deal.where(account_id: account_id, contact_id: contact_id,
+                                     agency_pipeline_id: agency_pipeline_id, status: :open, discarded_at: nil)
+                              .where.not(id: id).first
+    return if existing.blank?
+
+    errors.add(:base, "ya existe un deal abierto para este contacto en este pipeline (deal ##{existing.id})")
+  end
+
+  # Las validaciones corren antes que el before_save sync_status_with_stage, así
+  # que para vigilar la reapertura hay que mirar el estado efectivo tras el
+  # guardado: entrar a etapa terminal cierra; salir de etapa terminal reabre.
+  def will_be_open_after_save?
+    return false if stage&.is_won || stage&.is_lost
+
+    open? || left_terminal_stage?
   end
 end

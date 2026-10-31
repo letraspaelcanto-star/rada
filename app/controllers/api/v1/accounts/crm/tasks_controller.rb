@@ -39,12 +39,30 @@ class Api::V1::Accounts::Crm::TasksController < Api::V1::Accounts::BaseControlle
   end
 
   def assign_linked_records
-    deal_id = task_params[:agency_deal_id]
-    @task.deal = Current.account.agency_crm_deals.find_by(id: deal_id) if deal_id.present?
-    conversation_id = task_params[:conversation_id]
-    @task.conversation = Current.account.conversations.find_by(id: conversation_id) if conversation_id.present?
-    assignee_id = task_params[:assignee_id]
-    @task.assignee = Current.account.users.find_by(id: assignee_id) if assignee_id.present?
+    assign_deal if task_params[:agency_deal_id].present?
+    assign_conversation if task_params[:conversation_id].present?
+    assign_assignee if task_params[:assignee_id].present?
+  end
+
+  def assign_deal
+    @task.deal = Current.account.agency_crm_deals.find(task_params[:agency_deal_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:agency_deal_id)
+  end
+
+  def assign_conversation
+    @task.conversation = Current.account.conversations.find_by(id: task_params[:conversation_id])
+  end
+
+  def assign_assignee
+    @task.assignee = Current.account.users.find(task_params[:assignee_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:assignee_id)
+  end
+
+  def raise_record_invalid(attribute)
+    @task.errors.add(attribute, 'belongs to another account or does not exist')
+    raise ActiveRecord::RecordInvalid, @task
   end
 
   def task_params
