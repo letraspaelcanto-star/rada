@@ -15,10 +15,12 @@ class AgencyCrm::Deal < ApplicationRecord
   belongs_to :account
   belongs_to :pipeline, class_name: 'AgencyCrm::Pipeline', foreign_key: 'agency_pipeline_id', inverse_of: :deals
   belongs_to :stage, class_name: 'AgencyCrm::PipelineStage', foreign_key: 'agency_pipeline_stage_id', inverse_of: :deals
-  belongs_to :contact, class_name: '::Contact', inverse_of: :agency_crm_deals
-  belongs_to :conversation, class_name: '::Conversation', optional: true
-  belongs_to :company, class_name: '::Company', optional: true
-  belongs_to :assignee, class_name: '::User', optional: true
+  # ADR 0002: nullable porque "el contacto fue borrado" deja el deal huérfano;
+  # la API y la creación siguen exigiendo contacto (validación on: :create).
+  belongs_to :contact, class_name: '::Contact', inverse_of: :agency_crm_deals, optional: true
+  belongs_to :conversation, class_name: '::Conversation', optional: true, inverse_of: :agency_crm_deals
+  belongs_to :company, class_name: '::Company', optional: true, inverse_of: :agency_crm_deals
+  belongs_to :assignee, class_name: '::User', optional: true, inverse_of: :agency_crm_deals
 
   has_many :activities, class_name: 'AgencyCrm::DealActivity', foreign_key: 'agency_deal_id',
                         inverse_of: :deal, dependent: :destroy
@@ -29,6 +31,7 @@ class AgencyCrm::Deal < ApplicationRecord
   enum :priority, { low: 0, medium: 1, high: 2, urgent: 3 }
 
   validates :title, presence: true
+  validates :contact, presence: true, on: :create
   validates :value_cents, numericality: { greater_than_or_equal_to: 0 }
   validate :stage_matches_account
   validate :pipeline_matches_account
@@ -68,7 +71,7 @@ class AgencyCrm::Deal < ApplicationRecord
       account: account.webhook_data,
       pipeline: pipeline.slice(:id, :name).symbolize_keys,
       stage: stage.slice(:id, :name, :is_won, :is_lost).symbolize_keys,
-      contact: contact.webhook_data,
+      contact: contact&.webhook_data,
       conversation: conversation&.webhook_data,
       assignee: assignee&.webhook_data
     )

@@ -99,6 +99,17 @@ RSpec.describe 'CRM Deals API', type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it 'rejects a deal without a contact' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/crm/deals",
+             params: { deal: { title: 'Colchón antiescaras', agency_pipeline_id: pipeline.id,
+                               agency_pipeline_stage_id: first_stage.id } },
+             headers: agent.create_new_auth_token
+      end.not_to change(AgencyCrm::Deal, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
     it 'dispatches deal_created through the existing dispatcher' do
       allow(Rails.configuration.dispatcher).to receive(:dispatch)
       expect(Rails.configuration.dispatcher).to receive(:dispatch)
