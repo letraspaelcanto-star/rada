@@ -127,6 +127,22 @@ RSpec.describe AgencyCrm::Deal do
       expect(deal).not_to be_valid
       expect(deal.errors.full_messages.join(' ')).to include("deal ##{abierto_del_otro.id}")
     end
+
+    it 'los dos abiertos que deja el merge se pueden editar sin 422' do
+      base = create(:contact, account: account)
+      uno = new_deal(contact: base)
+      uno.save!
+      # El merge (ADR 0002) lleva el segundo deal al contacto base por
+      # update_columns, sin pasar por esta validación.
+      dos = new_deal
+      dos.save!
+      dos.update_columns(contact_id: base.id)
+
+      otra_stage = create_agency_stage(pipeline, name: 'Cotizado')
+      expect { uno.update!(title: 'Valor nuevo'); dos.update!(stage: otra_stage) }.not_to raise_error
+      expect(uno.reload.title).to eq('Valor nuevo')
+      expect(dos.reload.agency_pipeline_stage_id).to eq(otra_stage.id)
+    end
   end
 
   describe 'enums alineados con Conversation' do

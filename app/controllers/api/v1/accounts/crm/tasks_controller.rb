@@ -51,7 +51,9 @@ class Api::V1::Accounts::Crm::TasksController < Api::V1::Accounts::BaseControlle
   end
 
   def assign_conversation
-    @task.conversation = Current.account.conversations.find_by(id: task_params[:conversation_id])
+    @task.conversation = Current.account.conversations.find(task_params[:conversation_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:conversation_id)
   end
 
   def assign_assignee

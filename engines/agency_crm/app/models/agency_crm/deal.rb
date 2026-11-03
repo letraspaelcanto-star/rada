@@ -180,7 +180,12 @@ class AgencyCrm::Deal < ApplicationRecord
   # (account, contacto, pipeline). Solo validación de modelo: el merge de
   # contactos (ADR 0002) puede dejar dos abiertos a propósito y no pasa por acá
   # (usa update_columns). Sin contacto (borrado) no se puede vigilar el duplicado.
+  # Corre solo cuando algo relevante puede cambiar (alta, reapertura por etapa
+  # o por status, cambio manual de pipeline/contacto): así los dos abiertos que
+  # deja el merge se pueden seguir editando sin 422.
   def single_open_deal_per_contact_and_pipeline
+    return unless new_record? || left_terminal_stage? || will_save_change_to_contact_id? ||
+                  will_save_change_to_agency_pipeline_id? || will_save_change_to_status?(to: :open)
     return if contact_id.blank? || discarded_at.present?
     return unless will_be_open_after_save?
 

@@ -77,6 +77,17 @@ RSpec.describe 'CRM Tasks API', type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(task.reload.assignee_id).to eq(agent.id)
     end
+
+    it 'returns 422 for update with a conversation from another account' do
+      foreign_conversation = create(:conversation, account: create(:account))
+
+      patch "/api/v1/accounts/#{account.id}/crm/tasks/#{task.id}",
+            params: { task: { conversation_id: foreign_conversation.id } },
+            headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(task.reload.conversation_id).to be_nil
+    end
   end
 
   describe 'relinking a task to a deal of another board' do
