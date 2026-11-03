@@ -39,6 +39,115 @@ RSpec.describe AgencyCrm::Deal do
     end
   end
 
+  describe 'la etapa tiene que ser del mismo pipeline (ADR 0003)' do
+    it 'rechaza una etapa de otro pipeline, aun de la misma cuenta' do
+      otro_pipeline = create_agency_pipeline(account)
+      stage_de_otro = create_agency_stage(otro_pipeline, name: 'Nuevo')
+
+      expect(new_deal(stage: stage_de_otro)).not_to be_valid
+    end
+  end
+
+  describe 'un deal abierto por contacto y pipeline (ADR 0003)' do
+    let(:otro_contacto) { create(:contact, account: account) }
+
+    it 'rechaza un segundo abierto para el mismo contacto y pipeline, y nombra el existente' do
+      existente = new_deal
+      existente.save!
+      duplicado = new_deal
+
+      expect(duplicado).not_to be_valid
+      expect(duplicado.errors.full_messages.join(' ')).to include("deal ##{existente.id}")
+    end
+
+    it 'permite dos abiertos del mismo contacto en pipelines distintos' do
+      otro_pipeline = create_agency_pipeline(account)
+      new_deal.save!
+
+      otro = new_deal(pipeline: otro_pipeline, stage: create_agency_stage(otro_pipeline, name: 'Nuevo'))
+      expect(otro).to be_valid
+    end
+
+    it 'permite dos abiertos del mismo pipeline con contactos distintos' do
+      new_deal.save!
+
+      expect(new_deal(contact: otro_contacto)).to be_valid
+    end
+
+    it 'los ganados o perdidos no cuentan' do
+      ganado = new_deal
+      ganado.save!
+      ganado.won!
+
+      expect(new_deal).to be_valid
+    end
+
+    it 'un descartado no bloquea' do
+      descartado = new_deal
+      descartado.save!
+      descartado.discard
+
+      expect(new_deal).to be_valid
+    end
+
+    it 'rechaza reabrir uno ganado si ya hay otro abierto para el mismo contacto y pipeline' do
+      abierto = new_deal
+      abierto.save!
+      ganado = new_deal(stage: create_agency_stage(pipeline, name: 'Ganado', is_won: true))
+      ganado.save!
+
+      expect(ganado.update(stage: stage)).to be(false)
+      expect(ganado.errors.full_messages.join(' ')).to include("deal ##{abierto.id}")
+      expect(ganado.reload.status).to eq('won')
+    end
+
+    it 'rechaza mover el deal a un pipeline donde el contacto ya tiene uno abierto' do
+      otro_pipeline = create_agency_pipeline(account)
+      stage_alla = create_agency_stage(otro_pipeline, name: 'Nuevo')
+      abierto_alla = new_deal(pipeline: otro_pipeline, stage: stage_alla)
+      abierto_alla.save!
+      deal = new_deal
+      deal.save!
+
+      deal.pipeline = otro_pipeline
+      deal.stage = stage_alla
+
+      expect(deal).not_to be_valid
+      expect(deal.errors.full_messages.join(' ')).to include("deal ##{abierto_alla.id}")
+    end
+
+    it 'rechaza cambiar a mano el contacto por uno que ya tiene un abierto en el pipeline' do
+      abierto_del_otro = new_deal(contact: otro_contacto)
+      abierto_del_otro.save!
+      deal = new_deal
+      deal.save!
+
+      deal.contact = otro_contacto
+
+      expect(deal).not_to be_valid
+      expect(deal.errors.full_messages.join(' ')).to include("deal ##{abierto_del_otro.id}")
+    end
+
+    it 'los dos abiertos que deja el merge se pueden editar sin 422' do
+      base = create(:contact, account: account)
+      uno = new_deal(contact: base)
+      uno.save!
+      # El merge (ADR 0002) lleva el segundo deal al contacto base por
+      # update_columns, sin pasar por esta validación.
+      dos = new_deal
+      dos.save!
+      # rubocop:disable Rails/SkipsModelValidations -- simula el merge: el estado legacy no tiene que pasar por validaciones
+      dos.update_columns(contact_id: base.id)
+      # rubocop:enable Rails/SkipsModelValidations
+
+      otra_stage = create_agency_stage(pipeline, name: 'Cotizado')
+      expect { uno.update!(value_cents: 450_000) }.not_to raise_error
+      expect { dos.update!(stage: otra_stage) }.not_to raise_error
+      expect(uno.reload.value_cents).to eq(450_000)
+      expect(dos.reload.agency_pipeline_stage_id).to eq(otra_stage.id)
+    end
+  end
+
   describe 'enums alineados con Conversation' do
     it 'priority usa los mismos valores que Conversation (low:0..urgent:3)' do
       expect(described_class.priorities).to eq('low' => 0, 'medium' => 1, 'high' => 2, 'urgent' => 3)
@@ -147,7 +256,7 @@ RSpec.describe AgencyCrm::Deal do
       ganado = new_deal
       ganado.save!
       ganado.won!
-      perdido = new_deal(title: 'Silla de ruedas')
+      perdido = new_deal(title: 'Silla de ruedas', contact: create(:contact, account: account))
       perdido.save!
       perdido.lost!
 

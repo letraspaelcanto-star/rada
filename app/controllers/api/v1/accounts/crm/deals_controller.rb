@@ -61,7 +61,8 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
   end
 
   # Los registros linkeados se resuelven SIEMPRE dentro de la cuenta (aislamiento
-  # por cliente): un id ajeno levanta RecordNotFound → 404, no un 500.
+  # por cliente). Contacto ajeno → 404 (find, contrato de la API); conversation,
+  # company y assignee ajenos → 422 con error (brief ítem 3), no ignorarlos.
   def assign_linked_records
     assign_contact if deal_params[:contact_id].present?
     assign_conversation if deal_params[:conversation_id].present?
@@ -74,15 +75,26 @@ class Api::V1::Accounts::Crm::DealsController < Api::V1::Accounts::BaseControlle
   end
 
   def assign_conversation
-    @deal.conversation = Current.account.conversations.find_by(id: deal_params[:conversation_id])
+    @deal.conversation = Current.account.conversations.find(deal_params[:conversation_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:conversation_id)
   end
 
   def assign_company
-    @deal.company = Current.account.companies.find_by(id: deal_params[:company_id])
+    @deal.company = Current.account.companies.find(deal_params[:company_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:company_id)
   end
 
   def assign_assignee
-    @deal.assignee = Current.account.users.find_by(id: deal_params[:assignee_id])
+    @deal.assignee = Current.account.users.find(deal_params[:assignee_id])
+  rescue ActiveRecord::RecordNotFound
+    raise_record_invalid(:assignee_id)
+  end
+
+  def raise_record_invalid(attribute)
+    @deal.errors.add(attribute, 'belongs to another account or does not exist')
+    raise ActiveRecord::RecordInvalid, @deal
   end
 
   def filtered_deals

@@ -66,6 +66,28 @@ RSpec.describe 'CRM Tasks API', type: :request do
 
       expect(task.reload.assignee_id).to eq(other_agent.id)
     end
+
+    it 'returns 422 for update with an assignee from another account' do
+      foreign_agent = create(:user, account: create(:account), role: :agent)
+
+      patch "/api/v1/accounts/#{account.id}/crm/tasks/#{task.id}",
+            params: { task: { assignee_id: foreign_agent.id } },
+            headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(task.reload.assignee_id).to eq(agent.id)
+    end
+
+    it 'returns 422 for update with a conversation from another account' do
+      foreign_conversation = create(:conversation, account: create(:account))
+
+      patch "/api/v1/accounts/#{account.id}/crm/tasks/#{task.id}",
+            params: { task: { conversation_id: foreign_conversation.id } },
+            headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(task.reload.conversation_id).to be_nil
+    end
   end
 
   describe 'relinking a task to a deal of another board' do
@@ -116,8 +138,7 @@ RSpec.describe 'CRM Tasks API', type: :request do
       expect(other_task.reload.title).to eq('Foreign task')
     end
 
-    it 'rejects a deal from another account on create',
-       pending: 'ítem 3: ids de otra cuenta deben dar 422 (hoy se descartan en silencio)' do
+    it 'rejects a deal from another account on create' do
       expect do
         post "/api/v1/accounts/#{account.id}/crm/tasks",
              params: { task: { title: 'Follow up', agency_deal_id: other_deal.id } }, headers: agent.create_new_auth_token

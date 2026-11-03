@@ -193,6 +193,85 @@ RSpec.describe 'CRM Deals API', type: :request do
     end
   end
 
+  describe 'validaciones (ADR 0003)' do
+    it 'POST duplicado para el mismo contacto y pipeline devuelve 422 con el id del abierto' do
+      existing_open = create_deal(title: 'Abierto existente', stage: first_stage)
+
+      expect do
+        post "/api/v1/accounts/#{account.id}/crm/deals",
+             params: { deal: { title: 'Duplicado', agency_pipeline_id: pipeline.id,
+                               agency_pipeline_stage_id: first_stage.id, contact_id: contact.id } },
+             headers: agent.create_new_auth_token
+      end.not_to change(AgencyCrm::Deal, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['message']).to include(existing_open.id.to_s)
+    end
+
+    it 'PATCH que reabre un ganado choca con el abierto: 422 y no reabre' do
+      create_deal(title: 'Abierto existente', stage: first_stage)
+      won = create_deal(title: 'Ganado', stage: won_stage)
+
+      patch "/api/v1/accounts/#{account.id}/crm/deals/#{won.id}",
+            params: { deal: { agency_pipeline_stage_id: first_stage.id } },
+            headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(won.reload.status).to eq('won')
+    end
+
+    it 'PATCH con una etapa de otro pipeline devuelve 422' do
+      other_pipeline = AgencyCrm::Pipeline.create!(account: account, name: 'Otro board')
+      foreign_stage = other_pipeline.stages.create!(account: account, name: 'nuevo', position: 0, win_probability: 10)
+      deal = create_deal(title: 'Deal con etapa ajena', stage: first_stage)
+
+      patch "/api/v1/accounts/#{account.id}/crm/deals/#{deal.id}",
+            params: { deal: { agency_pipeline_stage_id: foreign_stage.id } },
+            headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it 'POST con conversation_id de otra cuenta devuelve 422' do
+      foreign_conversation = create(:conversation, account: create(:account))
+      other_contact = create(:contact, account: account)
+
+      post "/api/v1/accounts/#{account.id}/crm/deals",
+           params: { deal: { title: 'Deal ajeno', agency_pipeline_id: pipeline.id,
+                             agency_pipeline_stage_id: first_stage.id, contact_id: other_contact.id,
+                             conversation_id: foreign_conversation.id } },
+           headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it 'POST con company_id de otra cuenta devuelve 422' do
+      foreign_company = create(:company, account: create(:account))
+      other_contact = create(:contact, account: account)
+
+      post "/api/v1/accounts/#{account.id}/crm/deals",
+           params: { deal: { title: 'Deal ajeno', agency_pipeline_id: pipeline.id,
+                             agency_pipeline_stage_id: first_stage.id, contact_id: other_contact.id,
+                             company_id: foreign_company.id } },
+           headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it 'POST con assignee_id de otra cuenta devuelve 422' do
+      foreign_agent = create(:user, account: create(:account), role: :agent)
+      other_contact = create(:contact, account: account)
+
+      post "/api/v1/accounts/#{account.id}/crm/deals",
+           params: { deal: { title: 'Deal ajeno', agency_pipeline_id: pipeline.id,
+                             agency_pipeline_stage_id: first_stage.id, contact_id: other_contact.id,
+                             assignee_id: foreign_agent.id } },
+           headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe 'account isolation' do
     let(:other_account) { create(:account) }
     let(:other_contact) { create(:contact, account: other_account) }
