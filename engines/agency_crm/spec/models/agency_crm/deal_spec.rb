@@ -139,8 +139,8 @@ RSpec.describe AgencyCrm::Deal do
       dos.update_columns(contact_id: base.id)
 
       otra_stage = create_agency_stage(pipeline, name: 'Cotizado')
-      expect { uno.update!(title: 'Valor nuevo'); dos.update!(stage: otra_stage) }.not_to raise_error
-      expect(uno.reload.title).to eq('Valor nuevo')
+      expect { uno.update!(value_cents: 450_000); dos.update!(stage: otra_stage) }.not_to raise_error
+      expect(uno.reload.value_cents).to eq(450_000)
       expect(dos.reload.agency_pipeline_stage_id).to eq(otra_stage.id)
     end
   end

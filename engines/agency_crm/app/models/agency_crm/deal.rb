@@ -185,7 +185,7 @@ class AgencyCrm::Deal < ApplicationRecord
   # deja el merge se pueden seguir editando sin 422.
   def single_open_deal_per_contact_and_pipeline
     return unless new_record? || left_terminal_stage? || will_save_change_to_contact_id? ||
-                  will_save_change_to_agency_pipeline_id? || will_save_change_to_status?(to: :open)
+                  will_save_change_to_agency_pipeline_id? || (will_save_change_to_status? && open?)
     return if contact_id.blank? || discarded_at.present?
     return unless will_be_open_after_save?
 
