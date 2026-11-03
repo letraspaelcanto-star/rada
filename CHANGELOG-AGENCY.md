@@ -1,6 +1,7 @@
 # Changelog del fork (lo nuestro, no upstream)
 
 ## Sin publicar
+- chore(fork): bump de gems por advisories de bundle-audit (publicados 02-11) — rack 3.2.6→3.2.8, rails-html-sanitizer 1.7.1→1.7.2, addressable 2.9.0→2.9.2, y sus deps de patch (loofah 2.25.3, nokogiri 1.19.7); sin esto el check `security-scan` del CI trababa todo merge a develop.
 - fix(agency-crm): borrar contacto/conversación/empresa/usuario nullifica los vínculos del CRM en vez de fallar o arrastrar el registro (`agency_deals.contact_id`, `conversation_id`, `company_id`, `assignee_id` y `agency_tasks.conversation_id`, `assignee_id` aceptan NULL; contacto sigue siendo obligatorio al crear el deal); el merge de contactos pasa los deals al base antes de destruir el mergee y marca con actividad de sistema + tarea los dos abiertos del mismo pipeline (Sprint 3.5 ítem 9).
 - fix(agency-crm): `BoardMembership` aplicada en policies — el viewer lee, el editor escribe y sin membresía el board no existe (index filtrado, show 404, escritura 403); mover un deal o relinkear una tarea de un board a otro exige ser editor (o admin) de los DOS boards; `PipelineChannel` exige membresía o rol admin; el seed OB crea membresías editor de forma idempotente (Sprint 3.5 ítem 5).
 - docs(fork): cola de trabajo para agentes (`docs/sprints/actual.md` con orden y `docs/sprints/briefs/`), ADR 0002 (borrados y merge) y 0003 (un deal abierto por contacto), merge delegado a W1 y reglas de entorno en `AGENTS.md`.
