@@ -136,10 +136,13 @@ RSpec.describe AgencyCrm::Deal do
       # update_columns, sin pasar por esta validación.
       dos = new_deal
       dos.save!
+      # rubocop:disable Rails/SkipsModelValidations -- simula el merge: el estado legacy no tiene que pasar por validaciones
       dos.update_columns(contact_id: base.id)
+      # rubocop:enable Rails/SkipsModelValidations
 
       otra_stage = create_agency_stage(pipeline, name: 'Cotizado')
-      expect { uno.update!(value_cents: 450_000); dos.update!(stage: otra_stage) }.not_to raise_error
+      expect { uno.update!(value_cents: 450_000) }.not_to raise_error
+      expect { dos.update!(stage: otra_stage) }.not_to raise_error
       expect(uno.reload.value_cents).to eq(450_000)
       expect(dos.reload.agency_pipeline_stage_id).to eq(otra_stage.id)
     end

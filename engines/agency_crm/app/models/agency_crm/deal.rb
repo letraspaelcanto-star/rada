@@ -180,21 +180,29 @@ class AgencyCrm::Deal < ApplicationRecord
   # (account, contacto, pipeline). Solo validación de modelo: el merge de
   # contactos (ADR 0002) puede dejar dos abiertos a propósito y no pasa por acá
   # (usa update_columns). Sin contacto (borrado) no se puede vigilar el duplicado.
-  # Corre solo cuando algo relevante puede cambiar (alta, reapertura por etapa
-  # o por status, cambio manual de pipeline/contacto): así los dos abiertos que
-  # deja el merge se pueden seguir editando sin 422.
   def single_open_deal_per_contact_and_pipeline
-    return unless new_record? || left_terminal_stage? || will_save_change_to_contact_id? ||
-                  will_save_change_to_agency_pipeline_id? || (will_save_change_to_status? && open?)
+    return unless open_deal_uniqueness_check_needed?
     return if contact_id.blank? || discarded_at.present?
     return unless will_be_open_after_save?
 
-    existing = AgencyCrm::Deal.where(account_id: account_id, contact_id: contact_id,
-                                     agency_pipeline_id: agency_pipeline_id, status: :open, discarded_at: nil)
-                              .where.not(id: id).first
+    existing = conflicting_open_deal
     return if existing.blank?
 
     errors.add(:base, "ya existe un deal abierto para este contacto en este pipeline (deal ##{existing.id})")
+  end
+
+  # Corre solo cuando algo relevante puede cambiar (alta, reapertura por etapa
+  # o por status, cambio manual de pipeline/contacto): así los dos abiertos que
+  # deja el merge se pueden seguir editando sin 422.
+  def open_deal_uniqueness_check_needed?
+    new_record? || left_terminal_stage? || will_save_change_to_contact_id? ||
+      will_save_change_to_agency_pipeline_id? || (will_save_change_to_status? && open?)
+  end
+
+  def conflicting_open_deal
+    AgencyCrm::Deal.where(account_id: account_id, contact_id: contact_id,
+                          agency_pipeline_id: agency_pipeline_id, status: :open, discarded_at: nil)
+                   .where.not(id: id).first
   end
 
   # Las validaciones corren antes que el before_save sync_status_with_stage, así
